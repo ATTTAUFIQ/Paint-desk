@@ -63,9 +63,11 @@ if (MONGODB_URI.includes('retryWrites=true')) {
 mongoose.connect(MONGODB_URI, { retryWrites: false })
   .then(() => {
     console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+    if (!process.env.VERCEL) {
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+      });
+    }
   })
   .catch((err) => {
     console.error('Failed to connect to MongoDB', err);
