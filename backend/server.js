@@ -28,6 +28,15 @@ app.use(express.json());
 // Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
+// Health check APIs
+app.get('/', (req, res) => {
+  res.status(200).send('System is working fine');
+});
+
+app.get('/api', (req, res) => {
+  res.status(200).send('System is working fine');
+});
+
 // Routes
 app.use('/api/products', productRoutes);
 app.use('/api/customers', customerRoutes);
