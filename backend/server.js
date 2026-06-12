@@ -70,3 +70,6 @@ mongoose.connect(MONGODB_URI, { retryWrites: false })
   .catch((err) => {
     console.error('Failed to connect to MongoDB', err);
   });
+
+// Required for Vercel deployment
+module.exports = app;
