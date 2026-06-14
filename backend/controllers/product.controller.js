@@ -3,7 +3,7 @@ const { createProductSchema, updateProductSchema } = require('../validations/pro
 
 const createProduct = async (req, res) => {
   try {
-    const { error, value } = createProductSchema.validate(req.body);
+    const { error, value } = createProductSchema.validate(req.body, { stripUnknown: true });
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }
@@ -37,7 +37,7 @@ const getProductById = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   try {
-    const { error, value } = updateProductSchema.validate(req.body);
+    const { error, value } = updateProductSchema.validate(req.body, { stripUnknown: true });
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }

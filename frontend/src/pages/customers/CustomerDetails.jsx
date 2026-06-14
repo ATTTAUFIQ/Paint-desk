@@ -4,19 +4,34 @@ import { User, Phone, MapPin, FileText } from 'lucide-react';
 import customerService from '../../services/customerService';
 import PageHeader from '../../components/common/PageHeader';
 import FinancialWidget from '../../components/common/FinancialWidget';
+import PaymentModal from '../../components/common/PaymentModal';
+import PaymentHistory from '../../components/common/PaymentHistory';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
+import paymentService from '../../services/paymentService';
 
 const CustomerDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [customer, setCustomer] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null); // stores payment ID
+  const [activeTab, setActiveTab] = useState('purchases');
 
-  useEffect(() => {
-    const fetchCustomer = async () => {
+  const fetchCustomer = async () => {
       try {
-        const response = await customerService.getCustomerById(id);
-        if (response.success) {
-          setCustomer(response.data);
+        const [customerRes, paymentsRes] = await Promise.all([
+          customerService.getCustomerById(id),
+          paymentService.getPaymentsByParty('Customer', id)
+        ]);
+        
+        if (customerRes.success) {
+          setCustomer(customerRes.data);
+        }
+        if (paymentsRes && paymentsRes.success) {
+          setPayments(paymentsRes.data);
         }
       } catch (error) {
         console.error('Failed to fetch customer details', error);
@@ -24,6 +39,22 @@ const CustomerDetails = () => {
         setLoading(false);
       }
     };
+
+  const confirmDeletePayment = async () => {
+    if (!deleteConfirmation) return;
+    try {
+      const res = await paymentService.deletePayment(deleteConfirmation);
+      if (res.success) {
+        fetchCustomer();
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleteConfirmation(null);
+    }
+  };
+  
+  useEffect(() => {
     fetchCustomer();
   }, [id]);
 
@@ -42,90 +73,129 @@ const CustomerDetails = () => {
       <PageHeader title="Customer Profile" backUrl="/customers" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Profile Card */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 flex flex-col items-center text-center relative overflow-hidden">
-            <div className="w-full h-24 bg-gradient-to-r from-blue-500 to-indigo-600 absolute top-0 left-0"></div>
-            <div className="w-24 h-24 bg-white rounded-full p-1 z-10 mt-6 shadow-lg">
+        {/* Left Column: Profile Card & Finances */}
+        <div className="lg:col-span-1 flex flex-col gap-5">
+          <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6 flex flex-col items-center text-center relative overflow-hidden">
+            <div className="w-full h-20 bg-gradient-to-r from-blue-500 to-indigo-600 absolute top-0 left-0"></div>
+            <div className="w-20 h-20 bg-white rounded-full p-1 z-10 mt-2 shadow-sm">
               <div className="w-full h-full bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                <User size={40} />
+                <User size={32} />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mt-4">{customer.name}</h2>
-            <p className="text-slate-500 font-medium mt-1">Customer ID: {customer._id.substring(customer._id.length - 6).toUpperCase()}</p>
+            <h2 className="text-xl font-bold text-slate-900 mt-3">{customer.name}</h2>
+            <p className="text-slate-500 text-sm font-medium mt-0.5">ID: {customer._id.substring(customer._id.length - 6).toUpperCase()}</p>
 
-            <div className="w-full border-t border-slate-100 mt-6 pt-6 space-y-4 text-left">
+            <div className="w-full border-t border-slate-100 mt-4 pt-4 space-y-3 text-left">
               <div className="flex items-start gap-3">
-                <Phone className="text-slate-400 mt-0.5" size={18} />
+                <Phone className="text-slate-400 mt-0.5" size={16} />
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Mobile</p>
-                  <p className="text-slate-700 font-medium">{customer.mobileNumber}</p>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Mobile</p>
+                  <p className="text-slate-700 text-sm font-medium">{customer.mobileNumber}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <FileText className="text-slate-400 mt-0.5" size={18} />
+                <FileText className="text-slate-400 mt-0.5" size={16} />
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">GST Number</p>
-                  <p className="text-slate-700 font-medium">{customer.gstNumber || 'N/A'}</p>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">GST Number</p>
+                  <p className="text-slate-700 text-sm font-medium">{customer.gstNumber || 'N/A'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <MapPin className="text-slate-400 mt-0.5" size={18} />
+                <MapPin className="text-slate-400 mt-0.5" size={16} />
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Address</p>
-                  <p className="text-slate-700 font-medium leading-relaxed">{customer.address || 'No address provided.'}</p>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Address</p>
+                  <p className="text-slate-700 text-sm font-medium leading-snug">{customer.address || 'No address provided.'}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Reusable Financial Widget */}
+          {/* Reusable Financial Widget - Kept below but Profile Card is now compacted */}
           <FinancialWidget 
             amount={customer.outstandingBalance}
             title="Outstanding Balance"
             type="debt" 
             actionText="Record Payment"
-            onActionClick={() => alert('Payment flow will be integrated here')}
+            onActionClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
           />
         </div>
 
-        {/* Right Column: Purchase History */}
+        {/* Right Column: History Tabs */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 h-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800">Purchase History</h3>
-              <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-lg">Sales Module</span>
+            <div className="flex space-x-6 border-b border-slate-100 mb-6">
+              <button
+                className={`pb-4 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'purchases' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                onClick={() => setActiveTab('purchases')}
+              >
+                Purchase History
+              </button>
+              <button
+                className={`pb-4 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'payments' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                onClick={() => setActiveTab('payments')}
+              >
+                Payment History
+              </button>
             </div>
             
-            {/* Mock Table since Sales module isn't built yet */}
-            <div className="overflow-hidden border border-slate-100 rounded-2xl">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-100">
-                  <tr>
-                    <th className="px-6 py-4">Invoice #</th>
-                    <th className="px-6 py-4">Date</th>
-                    <th className="px-6 py-4">Amount</th>
-                    <th className="px-6 py-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  <tr>
-                    <td colSpan="4" className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                          <FileText className="text-slate-300" size={32} />
+            {activeTab === 'purchases' ? (
+              <div className="overflow-hidden border border-slate-100 rounded-2xl">
+                <table className="w-full text-left text-sm text-slate-600">
+                  <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-100">
+                    <tr>
+                      <th className="px-6 py-4">Invoice #</th>
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4">Amount</th>
+                      <th className="px-6 py-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    <tr>
+                      <td colSpan="4" className="px-6 py-16 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                            <FileText className="text-slate-300" size={32} />
+                          </div>
+                          <p className="text-slate-500 font-medium mb-1">No purchase history yet.</p>
+                          <p className="text-slate-400 text-sm">Once sales are recorded, they will appear here.</p>
                         </div>
-                        <p className="text-slate-500 font-medium mb-1">No purchase history yet.</p>
-                        <p className="text-slate-400 text-sm">Once sales are recorded, they will appear here.</p>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <PaymentHistory 
+                payments={payments} 
+                onEditClick={(payment) => {
+                  setEditingPayment(payment);
+                  setIsPaymentModalOpen(true);
+                }}
+                onDeleteClick={(id) => setDeleteConfirmation(id)}
+              />
+            )}
           </div>
         </div>
       </div>
+
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => { setIsPaymentModalOpen(false); setEditingPayment(null); }}
+        partyType="Customer"
+        partyId={customer._id}
+        partyName={customer.name}
+        onPaymentSuccess={fetchCustomer}
+        editingPayment={editingPayment}
+      />
+
+      <ConfirmationModal
+        isOpen={!!deleteConfirmation}
+        onClose={() => setDeleteConfirmation(null)}
+        onConfirm={confirmDeletePayment}
+        title="Delete Payment"
+        message="Are you sure you want to delete this payment? The customer's outstanding balance will be mathematically reversed."
+        confirmText="Yes, Delete"
+      />
     </div>
   );
 };

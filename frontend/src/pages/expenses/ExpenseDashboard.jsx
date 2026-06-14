@@ -207,7 +207,7 @@ const ExpenseDashboard = () => {
                       {new Date(expense.expenseDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-1 transition-opacity">
                         <button onClick={() => openEditModal(expense)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Edit Expense">
                           <Edit size={18} />
                         </button>

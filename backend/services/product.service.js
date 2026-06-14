@@ -51,8 +51,8 @@ const updateProduct = async (id, updateData) => {
 };
 
 const deleteProduct = async (id) => {
-  // Soft delete
-  const product = await Product.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  // Hard delete
+  const product = await Product.findByIdAndDelete(id);
   if (!product) {
     throw new Error('Product not found');
   }

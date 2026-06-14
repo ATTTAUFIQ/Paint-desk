@@ -48,7 +48,7 @@ const updateDealer = async (id, updateData) => {
 };
 
 const deleteDealer = async (id) => {
-  const dealer = await Dealer.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const dealer = await Dealer.findByIdAndDelete(id);
   if (!dealer) {
     throw new Error('Dealer not found');
   }

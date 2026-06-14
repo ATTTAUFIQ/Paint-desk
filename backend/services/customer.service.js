@@ -6,7 +6,7 @@ const createCustomer = async (customerData) => {
 };
 
 const getCustomers = async (query = {}) => {
-  const { search, page = 1, limit = 10 } = query;
+  const { search, page = 1, limit = 10, sortOrder } = query;
   
   const filter = { isActive: true };
   if (search) {
@@ -18,8 +18,15 @@ const getCustomers = async (query = {}) => {
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
+  const sortObj = {};
+  if (sortOrder) {
+    sortObj.outstandingBalance = sortOrder === 'asc' ? 1 : -1;
+  } else {
+    sortObj.createdAt = -1;
+  }
+
   const [customers, total] = await Promise.all([
-    Customer.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+    Customer.find(filter).sort(sortObj).skip(skip).limit(parseInt(limit)),
     Customer.countDocuments(filter),
   ]);
 
@@ -48,7 +55,7 @@ const updateCustomer = async (id, updateData) => {
 };
 
 const deleteCustomer = async (id) => {
-  const customer = await Customer.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const customer = await Customer.findByIdAndDelete(id);
   if (!customer) {
     throw new Error('Customer not found');
   }

@@ -3,7 +3,7 @@ const { createCustomerSchema, updateCustomerSchema } = require('../validations/c
 
 const createCustomer = async (req, res) => {
   try {
-    const { error, value } = createCustomerSchema.validate(req.body);
+    const { error, value } = createCustomerSchema.validate(req.body, { stripUnknown: true });
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }
@@ -37,7 +37,7 @@ const getCustomerById = async (req, res) => {
 
 const updateCustomer = async (req, res) => {
   try {
-    const { error, value } = updateCustomerSchema.validate(req.body);
+    const { error, value } = updateCustomerSchema.validate(req.body, { stripUnknown: true });
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }

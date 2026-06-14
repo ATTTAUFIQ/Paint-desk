@@ -13,6 +13,7 @@ const expenseRoutes = require('./routes/expense.routes');
 const reportRoutes = require('./routes/report.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const settingRoutes = require('./routes/setting.routes');
+const paymentRoutes = require('./routes/payment.routes');
 const path = require('path');
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Database connection
 const PORT = process.env.PORT || 5000;

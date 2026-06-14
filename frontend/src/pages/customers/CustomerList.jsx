@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import customerService from '../../services/customerService';
 
 const CustomerList = () => {
@@ -11,11 +11,12 @@ const CustomerList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [sortOrder, setSortOrder] = useState(''); // '' | 'desc' | 'asc'
 
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const response = await customerService.getCustomers({ search, page, limit: 10 });
+      const response = await customerService.getCustomers({ search, page, limit: 10, sortOrder });
       if (response.success) {
         setCustomers(response.data.customers);
         setTotalPages(response.data.totalPages);
@@ -29,7 +30,13 @@ const CustomerList = () => {
 
   useEffect(() => {
     fetchCustomers();
-  }, [search, page]);
+  }, [search, page, sortOrder]);
+
+  const handleSortToggle = () => {
+    if (sortOrder === '') setSortOrder('desc');
+    else if (sortOrder === 'desc') setSortOrder('asc');
+    else setSortOrder('');
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -74,7 +81,15 @@ const CustomerList = () => {
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Mobile</th>
                 <th className="px-6 py-4">GST Number</th>
-                <th className="px-6 py-4">Outstanding Bal. (₹)</th>
+                <th 
+                  className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors select-none group"
+                  onClick={handleSortToggle}
+                >
+                  <div className="flex items-center gap-1.5">
+                    Outstanding Bal. (₹)
+                    {sortOrder === 'asc' ? <ArrowUp size={14} className="text-blue-600" /> : sortOrder === 'desc' ? <ArrowDown size={14} className="text-blue-600" /> : <ArrowUpDown size={14} className="text-slate-400" />}
+                  </div>
+                </th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>

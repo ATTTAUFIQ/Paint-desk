@@ -6,12 +6,16 @@ import purchaseService from '../../services/purchaseService';
 import dealerService from '../../services/dealerService';
 import productService from '../../services/productService';
 import PageHeader from '../../components/common/PageHeader';
+import ProductModal from '../../components/common/ProductModal';
 
 const PurchaseForm = () => {
   const navigate = useNavigate();
   const [dealers, setDealers] = useState([]);
   const [products, setProducts] = useState([]);
   const [serverError, setServerError] = useState('');
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [activeRowIndex, setActiveRowIndex] = useState(null);
+  const [productMap, setProductMap] = useState({});
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
@@ -43,13 +47,27 @@ const PurchaseForm = () => {
           productService.getProducts({ limit: 1000 })
         ]);
         if (dealersRes.success) setDealers(dealersRes.data.dealers);
-        if (productsRes.success) setProducts(productsRes.data.products);
+        if (productsRes.success) {
+          const prods = productsRes.data.products;
+          setProducts(prods);
+          const map = {};
+          prods.forEach(p => { map[p._id] = p; });
+          setProductMap(map);
+        }
       } catch (error) {
         console.error('Failed to fetch form dependencies', error);
       }
     };
     fetchData();
   }, []);
+
+  const handleProductChange = (index, productId, forceProduct = null) => {
+    const product = forceProduct || productMap[productId];
+    if (product) {
+      setValue(`items.${index}.unitPrice`, parseFloat(product.purchasePrice?.$numberDecimal || product.purchasePrice || 0));
+      setValue(`items.${index}.gstPercentage`, parseFloat(product.gstPercentage || 18));
+    }
+  };
 
   // Auto-calculate totals whenever items change
   useEffect(() => {
@@ -104,6 +122,17 @@ const PurchaseForm = () => {
     } catch (error) {
       setServerError(error.response?.data?.message || 'An error occurred during transaction processing. Please try again.');
     }
+  };
+
+  const handleProductCreated = (newProduct) => {
+    setProducts(prev => [...prev, newProduct]);
+    setProductMap(prev => ({ ...prev, [newProduct._id]: newProduct }));
+    if (activeRowIndex !== null) {
+      setValue(`items.${activeRowIndex}.productId`, newProduct._id, { shouldValidate: true });
+      handleProductChange(activeRowIndex, newProduct._id, newProduct);
+    }
+    setIsProductModalOpen(false);
+    setActiveRowIndex(null);
   };
 
   const inputClasses = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 font-medium text-slate-800 text-sm";
@@ -192,15 +221,29 @@ const PurchaseForm = () => {
                   return (
                     <tr key={item.id}>
                       <td className="py-4 pr-4">
-                        <select
-                          {...register(`items.${index}.productId`, { required: true })}
-                          className={inputClasses}
-                        >
-                          <option value="">Select Product</option>
-                          {products.map(p => (
-                            <option key={p._id} value={p._id}>{p.name} ({p.productCode})</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <select
+                            {...register(`items.${index}.productId`, { required: true })}
+                            onChange={(e) => {
+                              register(`items.${index}.productId`).onChange(e);
+                              handleProductChange(index, e.target.value);
+                            }}
+                            className={inputClasses}
+                          >
+                            <option value="">Select Product</option>
+                            {products.map(p => (
+                              <option key={p._id} value={p._id}>{p.name} ({p.productCode})</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => { setActiveRowIndex(index); setIsProductModalOpen(true); }}
+                            className="p-2.5 bg-slate-100 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-colors shrink-0"
+                            title="Add New Product"
+                          >
+                            <Plus size={18} />
+                          </button>
+                        </div>
                       </td>
                       <td className="py-4 pr-4">
                         <input
@@ -278,6 +321,12 @@ const PurchaseForm = () => {
         </div>
 
       </form>
+
+      <ProductModal
+        isOpen={isProductModalOpen}
+        onClose={() => { setIsProductModalOpen(false); setActiveRowIndex(null); }}
+        onSuccess={handleProductCreated}
+      />
     </div>
   );
 };

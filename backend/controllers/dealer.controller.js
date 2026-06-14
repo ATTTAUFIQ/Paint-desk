@@ -3,7 +3,7 @@ const { createDealerSchema, updateDealerSchema } = require('../validations/deale
 
 const createDealer = async (req, res) => {
   try {
-    const { error, value } = createDealerSchema.validate(req.body);
+    const { error, value } = createDealerSchema.validate(req.body, { stripUnknown: true });
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }
@@ -37,7 +37,7 @@ const getDealerById = async (req, res) => {
 
 const updateDealer = async (req, res) => {
   try {
-    const { error, value } = updateDealerSchema.validate(req.body);
+    const { error, value } = updateDealerSchema.validate(req.body, { stripUnknown: true });
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }
