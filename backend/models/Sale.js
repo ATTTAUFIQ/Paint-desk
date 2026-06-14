@@ -9,7 +9,10 @@ const saleSchema = new mongoose.Schema({
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Customer',
-    required: true,
+    required: false,
+  },
+  customerName: {
+    type: String,
   },
   subTotal: {
     type: mongoose.Schema.Types.Decimal128,

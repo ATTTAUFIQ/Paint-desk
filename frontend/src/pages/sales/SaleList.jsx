@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Eye, XCircle } from 'lucide-react';
+import { Search, Plus, Eye, XCircle, Download, Edit } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import saleService from '../../services/saleService';
+import InvoiceTemplate from '../../components/invoice/InvoiceTemplate';
 
 const SaleList = () => {
   const navigate = useNavigate();
@@ -11,6 +14,9 @@ const SaleList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [cancelConfirm, setCancelConfirm] = useState(null);
+  const [downloadingSaleId, setDownloadingSaleId] = useState(null);
+  const [downloadSale, setDownloadSale] = useState(null);
+  const componentRef = React.useRef();
 
   const fetchSales = async () => {
     setLoading(true);
@@ -42,8 +48,77 @@ const SaleList = () => {
     }
   };
 
+  const handleDownload = async (id) => {
+    setDownloadingSaleId(id);
+    try {
+      const response = await saleService.getSaleById(id);
+      if (response.success) {
+        setDownloadSale(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch invoice for download', error);
+      alert('Failed to fetch invoice data. Please try again.');
+      setDownloadingSaleId(null);
+    }
+  };
+
+  useEffect(() => {
+    const generatePdf = async () => {
+      if (downloadSale && componentRef.current) {
+        // Temporarily proxy getComputedStyle to hide 'oklch' colors from html2canvas
+        const originalGetComputedStyle = window.getComputedStyle;
+        window.getComputedStyle = function (element, pseudoElt) {
+          const style = originalGetComputedStyle(element, pseudoElt);
+          return new Proxy(style, {
+            get(target, prop) {
+              const val = target[prop];
+              if (typeof val === 'string' && (val.includes('oklch') || val.includes('oklab'))) {
+                return prop === 'color' ? 'rgb(15, 23, 42)' : 'rgba(0, 0, 0, 0)';
+              }
+              if (typeof val === 'function') {
+                return function (...args) {
+                  const result = val.apply(target, args);
+                  if (typeof result === 'string' && (result.includes('oklch') || result.includes('oklab'))) {
+                    return args[0] === 'color' ? 'rgb(15, 23, 42)' : 'rgba(0, 0, 0, 0)';
+                  }
+                  return result;
+                };
+              }
+              return val;
+            }
+          });
+        };
+
+        try {
+          const element = componentRef.current;
+          const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+          const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with 80% quality to reduce size
+          const pdf = new jsPDF('p', 'mm', 'a4');
+
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST'); // Use FAST compression
+          pdf.save(`Invoice-${downloadSale.invoiceNumber}.pdf`);
+        } catch (error) {
+          console.error('PDF generation failed:', error);
+          alert('Failed to generate PDF. Error: ' + (error.message || error));
+        } finally {
+          window.getComputedStyle = originalGetComputedStyle;
+          setDownloadingSaleId(null);
+          setDownloadSale(null);
+        }
+      }
+    };
+
+    if (downloadSale) {
+      const timer = setTimeout(generatePdf, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [downloadSale]);
+
   const getPaymentBadge = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Paid': return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-600 border-emerald-100">Paid</span>;
       case 'Partial': return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-yellow-50 text-yellow-600 border-yellow-100">Partial</span>;
       default: return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-red-50 text-red-600 border-red-100">Pending</span>;
@@ -105,7 +180,9 @@ const SaleList = () => {
                       {sale.status === 'Cancelled' && <span className="ml-2 text-xs text-red-500 font-bold">(Cancelled)</span>}
                     </td>
                     <td className="px-6 py-4">{new Date(sale.saleDate).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 font-medium text-slate-700">{sale.customerId?.name || 'Unknown Customer'}</td>
+                    <td className="px-6 py-4 font-medium text-slate-700">
+                      {sale.customerId ? sale.customerId.name : (sale.customerName || 'Miscellaneous Customer')}
+                    </td>
                     <td className="px-6 py-4 font-semibold text-slate-900">₹{parseFloat(sale.totalAmount).toFixed(2)}</td>
                     <td className="px-6 py-4">
                       {getPaymentBadge(sale.paymentStatus)}
@@ -113,12 +190,29 @@ const SaleList = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-1 transition-opacity">
                         <button
+                          onClick={() => handleDownload(sale._id)}
+                          disabled={downloadingSaleId === sale._id}
+                          className={`p-2 rounded-lg transition-all ${downloadingSaleId === sale._id ? 'text-emerald-400 animate-pulse' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                          title="Download Invoice PDF"
+                        >
+                          <Download size={18} />
+                        </button>
+                        <button
                           onClick={() => navigate(`/sales/${sale._id}`)}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                           title="View Details"
                         >
                           <Eye size={18} />
                         </button>
+                        {sale.status !== 'Cancelled' && (
+                          <button
+                            onClick={() => navigate(`/sales/edit/${sale._id}`)}
+                            className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                            title="Edit Sale"
+                          >
+                            <Edit size={18} />
+                          </button>
+                        )}
                         {sale.status === 'Completed' && (
                           <button
                             onClick={() => setCancelConfirm(sale._id)}
@@ -161,6 +255,11 @@ const SaleList = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Hidden Invoice Template for PDF Generation */}
+      <div className="fixed top-0 left-0 z-[-9999] opacity-0 pointer-events-none">
+        {downloadSale && <InvoiceTemplate ref={componentRef} sale={downloadSale} />}
       </div>
 
       {/* Cancel Confirmation Modal */}

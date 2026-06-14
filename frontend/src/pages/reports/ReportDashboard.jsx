@@ -25,7 +25,7 @@ const ReportDashboard = () => {
     try {
       const params = {};
       const activeTabInfo = tabs.find(t => t.id === activeTab);
-      
+
       if (activeTabInfo?.hasDates) {
         if (startDate) params.startDate = startDate;
         if (endDate) params.endDate = endDate;
@@ -61,6 +61,7 @@ const ReportDashboard = () => {
           { header: 'Status', key: 'paymentStatus' },
           { header: 'SubTotal', key: 'subTotal', render: (row) => `₹${parseFloat(row.subTotal).toFixed(2)}` },
           { header: 'GST', key: 'totalGst', render: (row) => `₹${parseFloat(row.totalGst).toFixed(2)}` },
+          { header: 'Outstanding', key: 'outstanding', render: (row) => `₹${Math.max(0, (parseFloat(row.totalAmount) || 0) - (parseFloat(row.amountPaid) || 0)).toFixed(2)}` },
           { header: 'Total', key: 'totalAmount', render: (row) => `₹${parseFloat(row.totalAmount).toFixed(2)}` },
         ];
       case 'purchases':
@@ -68,18 +69,19 @@ const ReportDashboard = () => {
           { header: 'Date', key: 'purchaseDate', render: (row) => new Date(row.purchaseDate).toLocaleDateString() },
           { header: 'PO Number', key: 'purchaseNumber' },
           { header: 'Dealer', key: 'dealer', render: (row) => row.dealerId?.name || 'Unknown' },
-          { header: 'Status', key: 'paymentStatus' },
+          { header: 'Status', key: 'status' },
           { header: 'SubTotal', key: 'subTotal', render: (row) => `₹${parseFloat(row.subTotal).toFixed(2)}` },
           { header: 'Total', key: 'totalAmount', render: (row) => `₹${parseFloat(row.totalAmount).toFixed(2)}` },
         ];
       case 'profit':
         return [
           { header: 'Category', key: 'category', render: (row) => <span className="font-bold">{row.category}</span> },
-          { header: 'Amount', key: 'amount', render: (row) => (
+          {
+            header: 'Amount', key: 'amount', render: (row) => (
               <span className={row.amount < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold'}>
                 ₹{Math.abs(row.amount).toFixed(2)} {row.amount < 0 ? '(Deduct)' : ''}
               </span>
-            ) 
+            )
           },
         ];
       case 'expenses':
@@ -119,7 +121,7 @@ const ReportDashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
@@ -129,7 +131,7 @@ const ReportDashboard = () => {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
-        
+
         {/* Sidebar Nav */}
         <div className="w-full md:w-64 shrink-0 space-y-2">
           {tabs.map((tab) => {
@@ -139,11 +141,10 @@ const ReportDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setStartDate(''); setEndDate(''); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all text-left ${
-                  isActive 
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' 
-                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-100'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all text-left ${isActive
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                  : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-100'
+                  }`}
               >
                 <Icon size={18} /> {tab.name}
               </button>
@@ -153,7 +154,7 @@ const ReportDashboard = () => {
 
         {/* Report Content */}
         <div className="flex-1 space-y-6 min-w-0">
-          
+
           {/* Filters Bar */}
           {activeTabInfo?.hasDates && (
             <div className="bg-white p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-wrap items-end gap-4">
@@ -161,8 +162,8 @@ const ReportDashboard = () => {
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Start Date</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none"
@@ -173,15 +174,15 @@ const ReportDashboard = () => {
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">End Date</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none"
                   />
                 </div>
               </div>
-              <button 
+              <button
                 onClick={handleApplyFilter}
                 className="px-5 py-2 bg-slate-900 text-white rounded-xl font-semibold text-sm hover:bg-slate-800 transition-colors"
               >
@@ -197,7 +198,7 @@ const ReportDashboard = () => {
               <p className="text-slate-500 font-medium">Generating report...</p>
             </div>
           ) : (
-            <ReportViewer 
+            <ReportViewer
               title={activeTabInfo?.name || 'Report'}
               columns={getColumnsForTab()}
               data={reportData.data}

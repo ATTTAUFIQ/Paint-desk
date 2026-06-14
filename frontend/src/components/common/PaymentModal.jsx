@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, IndianRupee, Calendar, FileText, CreditCard, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import paymentService from '../../services/paymentService';
 
-const PaymentModal = ({ isOpen, onClose, partyType, partyId, partyName, onPaymentSuccess, editingPayment }) => {
+const PaymentModal = ({ isOpen, onClose, partyType, partyId, partyName, onPaymentSuccess, editingPayment, currentBalance }) => {
   const [formData, setFormData] = useState({
     amount: '',
     paymentDate: new Date().toISOString().split('T')[0],
@@ -24,7 +24,7 @@ const PaymentModal = ({ isOpen, onClose, partyType, partyId, partyName, onPaymen
       });
     } else {
       setFormData({
-        amount: '',
+        amount: currentBalance > 0 ? currentBalance.toString() : '',
         paymentDate: new Date().toISOString().split('T')[0],
         paymentMethod: 'Cash',
         referenceNumber: '',
@@ -44,8 +44,18 @@ const PaymentModal = ({ isOpen, onClose, partyType, partyId, partyName, onPaymen
   const handleSubmit = async (e) => {
     e.preventDefault();
     setNotification(null);
-    if (!formData.amount || formData.amount <= 0) {
+    const paymentAmount = parseFloat(formData.amount);
+    if (!paymentAmount || paymentAmount <= 0) {
       setNotification({ type: 'error', text: 'Please enter a valid amount' });
+      return;
+    }
+
+    const editingAmount = editingPayment ? parseFloat(editingPayment.amount?.$numberDecimal || editingPayment.amount || 0) : 0;
+    const maxAllowed = (parseFloat(currentBalance) || 0) + editingAmount;
+    
+    // Add small epsilon for floating point inaccuracies
+    if (paymentAmount > maxAllowed + 0.01) {
+      setNotification({ type: 'error', text: `Amount cannot exceed the pending balance of ₹${maxAllowed.toFixed(2)}` });
       return;
     }
 

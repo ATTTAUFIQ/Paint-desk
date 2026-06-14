@@ -20,6 +20,11 @@ const saleService = {
     const response = await api.post(`/sales/${id}/cancel`);
     return response.data;
   },
+
+  updateSale: async (id, data) => {
+    const response = await api.put(`/sales/${id}`, data);
+    return response.data;
+  },
 };
 
 export default saleService;

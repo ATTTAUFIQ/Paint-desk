@@ -121,11 +121,12 @@ const getDealerOutstanding = async () => {
 };
 
 const getStockReport = async () => {
-  const products = await Product.find().populate('categoryId', 'name').sort({ currentStock: 1 });
+  const products = await Product.find().sort({ currentStock: 1 });
   
   const summary = products.reduce((acc, p) => {
-    acc.totalItems += p.currentStock;
-    acc.totalStockValue += (p.currentStock * parseFloat(p.purchasePrice.toString()));
+    acc.totalItems += p.currentStock || 0;
+    const price = p.purchasePrice ? parseFloat(p.purchasePrice.toString()) : 0;
+    acc.totalStockValue += ((p.currentStock || 0) * price);
     return acc;
   }, { totalItems: 0, totalStockValue: 0 });
 

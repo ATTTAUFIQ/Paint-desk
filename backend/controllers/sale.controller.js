@@ -1,5 +1,5 @@
 const saleService = require('../services/sale.service');
-const { createSaleSchema } = require('../validations/sale.validation');
+const { createSaleSchema, updateSaleSchema } = require('../validations/sale.validation');
 
 const createSale = async (req, res) => {
   try {
@@ -44,9 +44,26 @@ const cancelSale = async (req, res) => {
   }
 };
 
+const updateSale = async (req, res) => {
+  try {
+    const { error, value } = updateSaleSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ success: false, message: error.details[0].message });
+    }
+    const sale = await saleService.updateSale(req.params.id, value);
+    res.status(200).json({ success: true, data: sale, message: 'Sale updated successfully' });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Invoice number already exists' });
+    }
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createSale,
   getSales,
   getSaleById,
   cancelSale,
+  updateSale,
 };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { User, FileText, CheckCircle, XCircle, Printer, Download } from 'lucide-react';
+import { User, FileText, CheckCircle, XCircle, Printer, Download, Edit } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -38,16 +38,47 @@ const SaleDetails = () => {
   });
 
   const handleDownloadPdf = async () => {
-    const element = componentRef.current;
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Invoice-${sale.invoiceNumber}.pdf`);
+    // Temporarily proxy getComputedStyle to hide 'oklch' and 'oklab' colors from html2canvas
+    const originalGetComputedStyle = window.getComputedStyle;
+    window.getComputedStyle = function (element, pseudoElt) {
+      const style = originalGetComputedStyle(element, pseudoElt);
+      return new Proxy(style, {
+        get(target, prop) {
+          const val = target[prop];
+          if (typeof val === 'string' && (val.includes('oklch') || val.includes('oklab'))) {
+            return prop === 'color' ? 'rgb(15, 23, 42)' : 'rgba(0, 0, 0, 0)';
+          }
+          if (typeof val === 'function') {
+            return function (...args) {
+              const result = val.apply(target, args);
+              if (typeof result === 'string' && (result.includes('oklch') || result.includes('oklab'))) {
+                return args[0] === 'color' ? 'rgb(15, 23, 42)' : 'rgba(0, 0, 0, 0)';
+              }
+              return result;
+            };
+          }
+          return val;
+        }
+      });
+    };
+
+    try {
+      const element = componentRef.current;
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+      const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with 80% quality to reduce size
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST'); // Use FAST compression
+      pdf.save(`Invoice-${sale.invoiceNumber}.pdf`);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Error: ' + (error.message || error));
+    } finally {
+      window.getComputedStyle = originalGetComputedStyle;
+    }
   };
 
   if (loading) {
@@ -59,7 +90,7 @@ const SaleDetails = () => {
   }
 
   const getPaymentBadge = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Paid': return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-600 border-emerald-100">Paid</span>;
       case 'Partial': return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-yellow-50 text-yellow-600 border-yellow-100">Partial</span>;
       default: return <span className="px-3 py-1 rounded-full text-xs font-bold border bg-red-50 text-red-600 border-red-100">Pending</span>;
@@ -73,13 +104,13 @@ const SaleDetails = () => {
       <div className="flex justify-between items-center flex-wrap gap-4">
         <PageHeader title={`Invoice: ${sale.invoiceNumber}`} backUrl="/sales" />
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-all shadow-sm"
           >
             <Printer size={18} /> Print
           </button>
-          <button 
+          <button
             onClick={handleDownloadPdf}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
           >
@@ -89,12 +120,12 @@ const SaleDetails = () => {
       </div>
 
       {/* Hidden Invoice Template for Printing/PDF */}
-      <div className="hidden">
+      <div className="absolute left-[-9999px] top-[-9999px] opacity-0 pointer-events-none">
         <InvoiceTemplate ref={componentRef} sale={sale} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column: Invoice Info & Customer Info */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8">
@@ -102,8 +133,17 @@ const SaleDetails = () => {
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Order Status</h3>
               {getPaymentBadge(sale.paymentStatus)}
             </div>
-            
+
             <div className="flex items-center gap-4 mb-6">
+              {sale.status !== 'Cancelled' && (
+                <button
+                  onClick={() => navigate(`/sales/edit/${sale._id}`)}
+                  className="flex items-center gap-2 bg-amber-50 text-amber-600 hover:bg-amber-100 px-4 py-2 rounded-xl font-medium transition-all"
+                >
+                  <Edit size={18} />
+                  Edit
+                </button>
+              )}
               {sale.status === 'Completed' ? (
                 <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
                   <CheckCircle size={24} />
@@ -122,22 +162,33 @@ const SaleDetails = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="border-t border-slate-100 pt-6 mt-6">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Customer Details</h3>
               <div className="flex items-start gap-3">
                 <User className="text-slate-400 mt-1" size={20} />
                 <div>
-                  <p className="text-lg font-bold text-slate-800 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => navigate(`/customers/${sale.customerId._id}`)}>
-                    {sale.customerId?.name || 'Unknown Customer'}
-                  </p>
-                  <p className="text-slate-500 font-medium text-sm mt-1">Mobile: {sale.customerId?.mobileNumber}</p>
-                  {sale.customerId?.gstNumber && <p className="text-slate-500 font-medium text-sm">GST: {sale.customerId.gstNumber}</p>}
+                  {sale.customerId ? (
+                    <>
+                      <p className="text-lg font-bold text-slate-800 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => navigate(`/customers/${sale.customerId._id}`)}>
+                        {sale.customerId.name}
+                      </p>
+                      <p className="text-slate-500 font-medium text-sm mt-1">Mobile: {sale.customerId.mobileNumber}</p>
+                      {sale.customerId.gstNumber && <p className="text-slate-500 font-medium text-sm">GST: {sale.customerId.gstNumber}</p>}
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-lg font-bold text-slate-800">
+                        {sale.customerName || 'Miscellaneous Customer'}
+                      </p>
+                      <p className="text-slate-500 font-medium text-sm mt-1">Walk-in Customer</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-slate-900 rounded-3xl shadow-xl p-8 text-white relative overflow-hidden">
             <div className="absolute -right-4 -top-4 w-32 h-32 bg-blue-500 rounded-full opacity-20 blur-3xl"></div>
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">Financial Summary</h3>
@@ -161,7 +212,7 @@ const SaleDetails = () => {
                 <span className="text-2xl font-extrabold text-blue-400">₹{parseFloat(sale.totalAmount).toFixed(2)}</span>
               </div>
             </div>
-            
+
             <div className="mt-6 pt-6 border-t border-slate-700/50 space-y-3">
               <div className="flex justify-between items-center text-emerald-400">
                 <span className="text-sm font-medium">Amount Paid</span>
@@ -184,7 +235,7 @@ const SaleDetails = () => {
               <FileText className="text-blue-600" size={20} />
               <h3 className="text-lg font-bold text-slate-800">Invoice Items</h3>
             </div>
-            
+
             <div className="overflow-x-auto p-6">
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-wider text-slate-500 font-semibold border-b border-slate-200">

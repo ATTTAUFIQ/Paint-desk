@@ -2,20 +2,27 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
-const PageHeader = ({ title, backUrl }) => {
+const PageHeader = ({ title, backUrl, children }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex items-center gap-4 mb-6">
-      {backUrl && (
-        <button
-          onClick={() => navigate(backUrl)}
-          className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl transition-all"
-        >
-          <ArrowLeft size={20} />
-        </button>
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-4">
+        {backUrl && (
+          <button
+            onClick={() => navigate(backUrl)}
+            className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl transition-all"
+          >
+            <ArrowLeft size={20} />
+          </button>
+        )}
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
+      </div>
+      {children && (
+        <div className="flex items-center gap-3">
+          {children}
+        </div>
       )}
-      <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
     </div>
   );
 };

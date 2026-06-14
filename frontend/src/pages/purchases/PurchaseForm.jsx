@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Save, Plus, Trash2, Calculator } from 'lucide-react';
 import purchaseService from '../../services/purchaseService';
 import dealerService from '../../services/dealerService';
@@ -9,6 +9,8 @@ import PageHeader from '../../components/common/PageHeader';
 import ProductModal from '../../components/common/ProductModal';
 
 const PurchaseForm = () => {
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
   const navigate = useNavigate();
   const [dealers, setDealers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -16,6 +18,7 @@ const PurchaseForm = () => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [activeRowIndex, setActiveRowIndex] = useState(null);
   const [productMap, setProductMap] = useState({});
+  const [isLoadingData, setIsLoadingData] = useState(isEditMode);
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
@@ -25,6 +28,7 @@ const PurchaseForm = () => {
       subTotal: 0,
       totalGst: 0,
       totalAmount: 0,
+      amountPaid: 0,
       items: [
         { productId: '', quantity: 1, unitPrice: 0, gstPercentage: 18, gstAmount: 0, totalPrice: 0 }
       ]
@@ -54,12 +58,38 @@ const PurchaseForm = () => {
           prods.forEach(p => { map[p._id] = p; });
           setProductMap(map);
         }
+
+        if (isEditMode) {
+          const purchaseRes = await purchaseService.getPurchaseById(id);
+          if (purchaseRes.success) {
+            const pd = purchaseRes.data;
+            setValue('purchaseNumber', pd.purchaseNumber);
+            setValue('purchaseDate', pd.purchaseDate ? new Date(pd.purchaseDate).toISOString().split('T')[0] : '');
+            setValue('dealerId', pd.dealerId?._id || pd.dealerId);
+            setValue('amountPaid', parseFloat(pd.amountPaid?.$numberDecimal || pd.amountPaid || 0));
+            
+            // Format items
+            const formattedItems = pd.items.map(item => ({
+              productId: item.productId?._id || item.productId,
+              quantity: parseFloat(item.quantity.$numberDecimal || item.quantity),
+              unitPrice: parseFloat(item.unitPrice.$numberDecimal || item.unitPrice),
+              gstPercentage: parseFloat(item.gstPercentage.$numberDecimal || item.gstPercentage),
+              gstAmount: parseFloat(item.gstAmount.$numberDecimal || item.gstAmount),
+              totalPrice: parseFloat(item.totalPrice.$numberDecimal || item.totalPrice)
+            }));
+            
+            setValue('items', formattedItems);
+            // totals will auto-calculate
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch form dependencies', error);
+      } finally {
+        setIsLoadingData(false);
       }
     };
     fetchData();
-  }, []);
+  }, [id, isEditMode, setValue]);
 
   const handleProductChange = (index, productId, forceProduct = null) => {
     const product = forceProduct || productMap[productId];
@@ -89,9 +119,15 @@ const PurchaseForm = () => {
       return { ...item, gstAmount: itemGst, totalPrice: itemTotal };
     });
 
+    const finalTotal = subTotal + totalGst;
     setValue('subTotal', subTotal.toFixed(2));
     setValue('totalGst', totalGst.toFixed(2));
-    setValue('totalAmount', (subTotal + totalGst).toFixed(2));
+    setValue('totalAmount', finalTotal.toFixed(2));
+    
+    // Auto-fill amountPaid with the full grand total by default
+    if (!isEditMode) {
+      setValue('amountPaid', finalTotal.toFixed(2));
+    }
 
   }, [JSON.stringify(watchItems), setValue]);
 
@@ -101,6 +137,7 @@ const PurchaseForm = () => {
       // Clean up calculation fields for submission just to be safe
       const payload = {
         ...data,
+        amountPaid: parseFloat(data.amountPaid) || 0,
         items: data.items.map(item => {
           const qty = parseFloat(item.quantity) || 0;
           const price = parseFloat(item.unitPrice) || 0;
@@ -117,7 +154,11 @@ const PurchaseForm = () => {
         })
       };
       
-      await purchaseService.createPurchase(payload);
+      if (isEditMode) {
+        await purchaseService.updatePurchase(id, payload);
+      } else {
+        await purchaseService.createPurchase(payload);
+      }
       navigate('/purchases');
     } catch (error) {
       setServerError(error.response?.data?.message || 'An error occurred during transaction processing. Please try again.');
@@ -138,9 +179,13 @@ const PurchaseForm = () => {
   const inputClasses = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 font-medium text-slate-800 text-sm";
   const errorInputClasses = "w-full px-4 py-2.5 bg-red-50 border border-red-300 rounded-xl focus:bg-white focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none transition-all font-medium text-slate-800 text-sm";
 
+  if (isLoadingData) {
+    return <div className="p-8 text-center text-slate-500 font-medium">Loading...</div>;
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <PageHeader title="New Purchase Order" backUrl="/purchases" />
+      <PageHeader title={isEditMode ? "Edit Purchase Order" : "New Purchase Order"} backUrl={isEditMode ? `/purchases/${id}` : "/purchases"} />
 
       {serverError && (
         <div className="p-4 bg-red-50 text-red-700 rounded-2xl border border-red-100 font-medium">
@@ -291,7 +336,26 @@ const PurchaseForm = () => {
         </div>
 
         {/* Calculation Summary & Submit */}
-        <div className="flex justify-end">
+        <div className="flex flex-col md:flex-row justify-end gap-6">
+          
+          {/* Payment Card */}
+          <div className="w-full md:w-80 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6 self-start">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Payment Given</h3>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Amount Paid Now (₹)</label>
+              <input
+                type="number"
+                step="0.01"
+                {...register('amountPaid')}
+                className={`${inputClasses} text-lg font-bold text-blue-600`}
+                placeholder="0.00"
+              />
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                If the amount paid is less than the Grand Total, the remainder will be added to the dealer's pending balance (credit).
+              </p>
+            </div>
+          </div>
+
           <div className="w-full md:w-96 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
             <div className="p-6 space-y-4 border-b border-slate-100">
               <div className="flex justify-between items-center text-slate-600 font-medium">
@@ -306,6 +370,28 @@ const PurchaseForm = () => {
                 <span>Grand Total</span>
                 <span>₹{watch('totalAmount')}</span>
               </div>
+
+              {/* Credit Calculation Indicator */}
+              {(() => {
+                const total = parseFloat(watch('totalAmount')) || 0;
+                const paid = parseFloat(watch('amountPaid')) || 0;
+                const due = total - paid;
+                if (due > 0) {
+                  return (
+                    <div className="pt-2 text-sm font-semibold text-amber-600 text-right">
+                      Will add ₹{due.toFixed(2)} to Dealer Pending Balance
+                    </div>
+                  );
+                } else if (due < 0) {
+                  return (
+                    <div className="pt-2 text-sm font-semibold text-emerald-600 text-right">
+                      Overpayment: ₹{Math.abs(due).toFixed(2)}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
             </div>
             <div className="p-6 bg-slate-50/50">
               <button
@@ -314,7 +400,7 @@ const PurchaseForm = () => {
                 className="w-full flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white px-8 py-3.5 rounded-xl font-semibold transition-all shadow-lg shadow-blue-600/20 hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Save size={20} />
-                {isSubmitting ? 'Processing Transaction...' : 'Confirm Purchase'}
+                {isSubmitting ? 'Processing Transaction...' : (isEditMode ? 'Update Purchase' : 'Confirm Purchase')}
               </button>
             </div>
           </div>

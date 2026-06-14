@@ -44,9 +44,27 @@ const cancelPurchase = async (req, res) => {
   }
 };
 
+const updatePurchase = async (req, res) => {
+  try {
+    const { updatePurchaseSchema } = require('../validations/purchase.validation');
+    const { error, value } = updatePurchaseSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ success: false, message: error.details[0].message });
+    }
+    const purchase = await purchaseService.updatePurchase(req.params.id, value);
+    res.status(200).json({ success: true, data: purchase, message: 'Purchase updated successfully' });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Purchase number already exists' });
+    }
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createPurchase,
   getPurchases,
   getPurchaseById,
   cancelPurchase,
+  updatePurchase,
 };

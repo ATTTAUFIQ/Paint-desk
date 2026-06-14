@@ -126,10 +126,12 @@ const CustomerForm = () => {
             <input
               type="number"
               step="0.01"
-              {...register('outstandingBalance')}
-              className={inputClasses}
+              min="0"
+              {...register('outstandingBalance', { min: { value: 0, message: 'Balance cannot be negative' } })}
+              className={errors.outstandingBalance ? errorInputClasses : inputClasses}
               placeholder="0.00"
             />
+            {errors.outstandingBalance && <p className="text-red-500 text-xs font-medium mt-1.5">{errors.outstandingBalance.message}</p>}
             <p className="text-xs text-slate-500 mt-1.5">Set this only for initial balance importing.</p>
           </div>
         </div>

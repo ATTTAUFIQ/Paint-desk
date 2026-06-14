@@ -119,10 +119,12 @@ const DealerForm = () => {
             <input
               type="number"
               step="0.01"
-              {...register('pendingBalance')}
-              className={inputClasses}
+              min="0"
+              {...register('pendingBalance', { min: { value: 0, message: 'Balance cannot be negative' } })}
+              className={errors.pendingBalance ? errorInputClasses : inputClasses}
               placeholder="0.00"
             />
+            {errors.pendingBalance && <p className="text-red-500 text-xs font-medium mt-1.5">{errors.pendingBalance.message}</p>}
             <p className="text-xs text-slate-500 mt-1.5">Amount we owe to this dealer initially.</p>
           </div>
         </div>

@@ -1,7 +1,74 @@
-import React from 'react';
-import { CreditCard, Calendar, IndianRupee, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { CreditCard, Calendar, IndianRupee, Trash2, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import PaymentReceiptTemplate from '../invoice/PaymentReceiptTemplate';
 
-const PaymentHistory = ({ payments, onEditClick, onDeleteClick }) => {
+const PaymentHistory = ({ payments, onEditClick, onDeleteClick, partyName }) => {
+  const [downloadingPaymentId, setDownloadingPaymentId] = useState(null);
+  const [downloadPayment, setDownloadPayment] = useState(null);
+  const receiptRef = useRef();
+
+  useEffect(() => {
+    const generatePdf = async () => {
+      if (downloadPayment && receiptRef.current) {
+        // Temporarily proxy getComputedStyle to hide 'oklch' colors from html2canvas
+        const originalGetComputedStyle = window.getComputedStyle;
+        window.getComputedStyle = function (element, pseudoElt) {
+          const style = originalGetComputedStyle(element, pseudoElt);
+          return new Proxy(style, {
+            get(target, prop) {
+              const val = target[prop];
+              if (typeof val === 'string' && (val.includes('oklch') || val.includes('oklab'))) {
+                return prop === 'color' ? 'rgb(15, 23, 42)' : 'rgba(0, 0, 0, 0)';
+              }
+              if (typeof val === 'function') {
+                return function (...args) {
+                  const result = val.apply(target, args);
+                  if (typeof result === 'string' && (result.includes('oklch') || result.includes('oklab'))) {
+                    return args[0] === 'color' ? 'rgb(15, 23, 42)' : 'rgba(0, 0, 0, 0)';
+                  }
+                  return result;
+                };
+              }
+              return val;
+            }
+          });
+        };
+
+        try {
+          const element = receiptRef.current;
+          const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+          const imgData = canvas.toDataURL('image/jpeg', 0.8);
+          const pdf = new jsPDF('p', 'mm', 'a4');
+
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+          pdf.save(`Receipt-${downloadPayment._id.slice(-6).toUpperCase()}.pdf`);
+        } catch (error) {
+          console.error('PDF generation failed:', error);
+          alert('Failed to generate PDF. Error: ' + (error.message || error));
+        } finally {
+          window.getComputedStyle = originalGetComputedStyle;
+          setDownloadingPaymentId(null);
+          setDownloadPayment(null);
+        }
+      }
+    };
+
+    if (downloadPayment) {
+      const timer = setTimeout(generatePdf, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [downloadPayment]);
+
+  const handleDownload = (payment) => {
+    setDownloadingPaymentId(payment._id);
+    setDownloadPayment(payment);
+  };
+
   return (
     <div className="overflow-hidden border border-slate-100 rounded-2xl">
       <table className="w-full text-left text-sm text-slate-600">
@@ -38,8 +105,16 @@ const PaymentHistory = ({ payments, onEditClick, onDeleteClick }) => {
                 </td>
                 <td className="px-6 py-4 text-right space-x-4">
                   <button
+                    onClick={() => handleDownload(payment)}
+                    disabled={downloadingPaymentId === payment._id}
+                    className={`inline-flex items-center justify-center align-middle transition-colors mr-3 ${downloadingPaymentId === payment._id ? 'text-emerald-400 animate-pulse' : 'text-slate-400 hover:text-emerald-600'}`}
+                    title="Download Receipt PDF"
+                  >
+                    <Download size={16} className="mt-[-2px]" />
+                  </button>
+                  <button
                     onClick={() => onEditClick(payment)}
-                    className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
+                    className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors mr-3"
                   >
                     Edit
                   </button>
@@ -48,7 +123,7 @@ const PaymentHistory = ({ payments, onEditClick, onDeleteClick }) => {
                     className="text-slate-400 hover:text-red-600 transition-colors inline-flex items-center justify-center align-middle"
                     title="Delete Payment"
                   >
-                    <Trash2 size={16} className="mt-[-2px]"/>
+                    <Trash2 size={16} className="mt-[-2px]" />
                   </button>
                 </td>
               </tr>
@@ -68,6 +143,11 @@ const PaymentHistory = ({ payments, onEditClick, onDeleteClick }) => {
           )}
         </tbody>
       </table>
+
+      {/* Hidden Receipt Template for PDF Generation */}
+      <div className="fixed top-0 left-0 z-[-9999] opacity-0 pointer-events-none">
+        {downloadPayment && <PaymentReceiptTemplate ref={receiptRef} payment={downloadPayment} partyName={partyName} />}
+      </div>
     </div>
   );
 };

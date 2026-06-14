@@ -8,7 +8,8 @@ const FinancialWidget = ({
   actionText = 'Record Payment',
   onActionClick
 }) => {
-  const value = parseFloat(amount || 0);
+  const numAmount = typeof amount === 'object' && amount !== null && amount.$numberDecimal ? amount.$numberDecimal : amount;
+  const value = parseFloat(numAmount || 0);
   const isPositive = value > 0;
   
   // Determine color scheme based on whether the balance is active
@@ -39,14 +40,12 @@ const FinancialWidget = ({
       <h3 className={`text-4xl font-extrabold tracking-tight ${colorScheme.amount}`}>
         ₹{value.toFixed(2)}
       </h3>
-      {isPositive && (
-        <button 
-          onClick={onActionClick}
-          className={`mt-6 w-full py-3 text-white rounded-xl font-semibold transition-all shadow-lg ${colorScheme.button}`}
-        >
-          {actionText}
-        </button>
-      )}
+      <button 
+        onClick={onActionClick}
+        className={`mt-6 w-full py-3 text-white rounded-xl font-semibold transition-all shadow-lg ${colorScheme.button}`}
+      >
+        {actionText}
+      </button>
     </div>
   );
 };

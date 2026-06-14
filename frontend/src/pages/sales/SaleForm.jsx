@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Save, Plus, Trash2, Calculator } from 'lucide-react';
 import saleService from '../../services/saleService';
 import customerService from '../../services/customerService';
@@ -11,16 +11,19 @@ const SaleForm = () => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const { id } = useParams();
+  const isEdit = Boolean(id);
   const [serverError, setServerError] = useState('');
   
   // Track selected product details for auto-filling prices
   const [productMap, setProductMap] = useState({});
 
-  const { register, control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
+  const { register, control, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
       saleDate: new Date().toISOString().split('T')[0],
       customerId: '',
+      customerName: 'Miscellaneous Customer',
       subTotal: 0,
       totalDiscount: 0,
       totalGst: 0,
@@ -61,12 +64,37 @@ const SaleForm = () => {
           });
           setProductMap(map);
         }
+        if (isEdit) {
+          const saleRes = await saleService.getSaleById(id);
+          if (saleRes.success) {
+            const sale = saleRes.data;
+            reset({
+              invoiceNumber: sale.invoiceNumber,
+              saleDate: sale.saleDate.split('T')[0],
+              customerId: sale.customerId?._id || '',
+              customerName: sale.customerName || '',
+              subTotal: parseFloat(sale.subTotal).toFixed(2),
+              totalDiscount: parseFloat(sale.totalDiscount).toFixed(2),
+              totalGst: parseFloat(sale.totalGst).toFixed(2),
+              totalAmount: parseFloat(sale.totalAmount).toFixed(2),
+              amountPaid: parseFloat(sale.amountPaid).toFixed(2),
+              items: sale.items.map(item => ({
+                productId: item.productId?._id || item.productId,
+                quantity: item.quantity,
+                unitPrice: parseFloat(item.unitPrice).toFixed(2),
+                gstPercentage: item.gstPercentage,
+                gstAmount: parseFloat(item.gstAmount).toFixed(2),
+                totalPrice: parseFloat(item.totalPrice).toFixed(2)
+              }))
+            });
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch form dependencies', error);
       }
     };
     fetchData();
-  }, []);
+  }, [id, isEdit, reset]);
 
   // Handle product selection change to autofill price & gst
   const handleProductChange = (index, productId) => {
@@ -105,6 +133,12 @@ const SaleForm = () => {
     setValue('subTotal', subTotal.toFixed(2));
     setValue('totalGst', totalGst.toFixed(2));
     setValue('totalAmount', finalTotal.toFixed(2));
+    
+    // Auto-fill Amount Paid with the full grand total by default, but only if not editing
+    // because if editing, we want to preserve the originally paid amount unless changed manually
+    if (!isEdit) {
+      setValue('amountPaid', finalTotal.toFixed(2));
+    }
 
   }, [JSON.stringify(watchItems), watchDiscount, setValue]);
 
@@ -113,6 +147,8 @@ const SaleForm = () => {
     try {
       const payload = {
         ...data,
+        customerId: data.customerId || null,
+        customerName: data.customerId ? null : (data.customerName || 'Miscellaneous Customer'),
         totalDiscount: parseFloat(data.totalDiscount) || 0,
         amountPaid: parseFloat(data.amountPaid) || 0,
         items: data.items.map(item => {
@@ -131,7 +167,11 @@ const SaleForm = () => {
         })
       };
       
-      await saleService.createSale(payload);
+      if (isEdit) {
+        await saleService.updateSale(id, payload);
+      } else {
+        await saleService.createSale(payload);
+      }
       navigate('/sales');
     } catch (error) {
       setServerError(error.response?.data?.message || 'Transaction failed. Check stock levels or try again.');
@@ -143,7 +183,7 @@ const SaleForm = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <PageHeader title="Point of Sale (New Invoice)" backUrl="/sales" />
+      <PageHeader title={isEdit ? "Edit Sale Invoice" : "Point of Sale (New Invoice)"} backUrl="/sales" />
 
       {serverError && (
         <div className="p-4 bg-red-50 text-red-700 rounded-2xl border border-red-100 font-medium">
@@ -154,13 +194,14 @@ const SaleForm = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         
         {/* Top Details Card */}
-        <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Invoice Number <span className="text-red-500">*</span></label>
             <input
               type="text"
               {...register('invoiceNumber', { required: 'Invoice Number is required' })}
               className={errors.invoiceNumber ? errorInputClasses : inputClasses}
+              disabled={isEdit}
             />
             {errors.invoiceNumber && <p className="text-red-500 text-xs font-medium mt-1">{errors.invoiceNumber.message}</p>}
           </div>
@@ -175,18 +216,29 @@ const SaleForm = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Customer <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Registered Customer</label>
             <select
-              {...register('customerId', { required: 'Customer is required' })}
-              className={errors.customerId ? errorInputClasses : inputClasses}
+              {...register('customerId')}
+              className={inputClasses}
             >
-              <option value="">Select Customer</option>
+              <option value="">-- Miscellaneous (Walk-in) --</option>
               {customers.map(c => (
                 <option key={c._id} value={c._id}>{c.name} ({c.mobileNumber})</option>
               ))}
             </select>
-            {errors.customerId && <p className="text-red-500 text-xs font-medium mt-1">{errors.customerId.message}</p>}
           </div>
+
+          {!watch('customerId') && (
+            <div className="animate-in fade-in zoom-in-95 duration-200">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Walk-in Name</label>
+              <input
+                type="text"
+                {...register('customerName')}
+                className={inputClasses}
+                placeholder="E.g. Walk-in Customer"
+              />
+            </div>
+          )}
         </div>
 
         {/* Dynamic Items Table Card */}
@@ -365,7 +417,7 @@ const SaleForm = () => {
                 className="w-full flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white px-8 py-3.5 rounded-xl font-semibold transition-all shadow-lg shadow-blue-600/20 hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Save size={20} />
-                {isSubmitting ? 'Processing...' : 'Confirm Sale'}
+                {isSubmitting ? 'Processing...' : (isEdit ? 'Update Sale' : 'Confirm Sale')}
               </button>
             </div>
           </div>

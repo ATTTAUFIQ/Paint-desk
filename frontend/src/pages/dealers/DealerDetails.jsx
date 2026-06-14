@@ -8,11 +8,13 @@ import PaymentModal from '../../components/common/PaymentModal';
 import PaymentHistory from '../../components/common/PaymentHistory';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import paymentService from '../../services/paymentService';
+import purchaseService from '../../services/purchaseService';
 
 const DealerDetails = () => {
   const { id } = useParams();
   const [dealer, setDealer] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
@@ -21,9 +23,10 @@ const DealerDetails = () => {
 
   const fetchDealer = async () => {
       try {
-        const [dealerRes, paymentsRes] = await Promise.all([
+        const [dealerRes, paymentsRes, purchasesRes] = await Promise.all([
           dealerService.getDealerById(id),
-          paymentService.getPaymentsByParty('Dealer', id)
+          paymentService.getPaymentsByParty('Dealer', id),
+          purchaseService.getPurchases({ dealerId: id, limit: 100 })
         ]);
         
         if (dealerRes.success) {
@@ -31,6 +34,9 @@ const DealerDetails = () => {
         }
         if (paymentsRes && paymentsRes.success) {
           setPayments(paymentsRes.data);
+        }
+        if (purchasesRes && purchasesRes.success) {
+          setPurchases(purchasesRes.data.purchases);
         }
       } catch (error) {
         console.error('Failed to fetch dealer details', error);
@@ -147,23 +153,41 @@ const DealerDetails = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    <tr>
-                      <td colSpan="4" className="px-6 py-16 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                            <FileText className="text-slate-300" size={32} />
+                    {purchases && purchases.length > 0 ? (
+                      purchases.map(purchase => (
+                        <tr key={purchase._id} className="hover:bg-slate-50/80 transition-colors cursor-pointer" onClick={() => navigate(`/purchases/${purchase._id}`)}>
+                          <td className="px-6 py-4 font-bold text-slate-900">{purchase.purchaseNumber}</td>
+                          <td className="px-6 py-4 text-slate-600">{new Date(purchase.purchaseDate).toLocaleDateString()}</td>
+                          <td className="px-6 py-4 font-semibold text-slate-900">₹{parseFloat(purchase.totalAmount).toFixed(2)}</td>
+                          <td className="px-6 py-4">
+                            {purchase.status === 'Completed' ? (
+                              <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-600 border-emerald-100">Completed</span>
+                            ) : (
+                              <span className="px-3 py-1 rounded-full text-xs font-bold border bg-red-50 text-red-600 border-red-100">Cancelled</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-16 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                              <FileText className="text-slate-300" size={32} />
+                            </div>
+                            <p className="text-slate-500 font-medium mb-1">No purchase orders found.</p>
+                            <p className="text-slate-400 text-sm">Stock purchases from this dealer will appear here.</p>
                           </div>
-                          <p className="text-slate-500 font-medium mb-1">No purchase orders found.</p>
-                          <p className="text-slate-400 text-sm">Stock purchases from this dealer will appear here.</p>
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             ) : (
               <PaymentHistory 
-                payments={payments} 
+                payments={payments}
+                partyName={dealer.name}
                 onEditClick={(payment) => {
                   setEditingPayment(payment);
                   setIsPaymentModalOpen(true);
@@ -183,6 +207,7 @@ const DealerDetails = () => {
         partyName={dealer.name}
         onPaymentSuccess={fetchDealer}
         editingPayment={editingPayment}
+        currentBalance={parseFloat(dealer.pendingBalance?.$numberDecimal || dealer.pendingBalance || 0)}
       />
 
       <ConfirmationModal

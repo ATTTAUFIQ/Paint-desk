@@ -50,9 +50,11 @@ function App() {
           <Route path="dealers/:id" element={<DealerDetails />} />
           <Route path="purchases" element={<PurchaseList />} />
           <Route path="purchases/new" element={<PurchaseForm />} />
+          <Route path="purchases/edit/:id" element={<PurchaseForm />} />
           <Route path="purchases/:id" element={<PurchaseDetails />} />
           <Route path="sales" element={<SaleList />} />
           <Route path="sales/new" element={<SaleForm />} />
+          <Route path="sales/edit/:id" element={<SaleForm />} />
           <Route path="sales/:id" element={<SaleDetails />} />
           <Route path="stock" element={<StockDashboard />} />
           <Route path="stock/history" element={<StockMovementHistory />} />

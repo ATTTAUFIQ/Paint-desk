@@ -11,7 +11,8 @@ const saleItemSchema = Joi.object({
 
 const createSaleSchema = Joi.object({
   invoiceNumber: Joi.string().required().trim(),
-  customerId: Joi.string().required(),
+  customerId: Joi.string().allow('', null).optional(),
+  customerName: Joi.string().allow('', null).optional(),
   saleDate: Joi.date().iso().required(),
   subTotal: Joi.number().min(0).required(),
   totalDiscount: Joi.number().min(0).default(0),
@@ -21,6 +22,9 @@ const createSaleSchema = Joi.object({
   items: Joi.array().items(saleItemSchema).min(1).required(),
 });
 
+const updateSaleSchema = createSaleSchema;
+
 module.exports = {
   createSaleSchema,
+  updateSaleSchema,
 };
