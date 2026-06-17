@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { checkModuleAccess } = require('../middleware/license');
+router.use(checkModuleAccess('expenses'));
 const expenseController = require('../controllers/expense.controller');
 
 router.get('/stats', expenseController.getExpenseStats);

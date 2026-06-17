@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { checkModuleAccess } = require('../middleware/license');
+router.use(checkModuleAccess('settings'));
 const settingController = require('../controllers/setting.controller');
 const upload = require('../middleware/upload');
 

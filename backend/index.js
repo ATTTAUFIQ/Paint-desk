@@ -14,6 +14,8 @@ const reportRoutes = require('./routes/report.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const settingRoutes = require('./routes/setting.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const licenseRoutes = require('./routes/license.routes'); // <-- NEW
+const { checkLicense } = require('./middleware/license'); // <-- NEW
 const path = require('path');
 
 const app = express();
@@ -45,7 +47,14 @@ app.get('/api', (req, res) => {
   res.status(200).send('System is working fine');
 });
 
-// Routes
+// Unprotected routes
+app.use('/api/license', licenseRoutes); // License config must be accessible to check status
+
+// Global License Check Middleware
+// All routes below this will be protected by the license check
+app.use('/api', checkLicense);
+
+// Protected Routes
 app.use('/api/products', productRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/dealers', dealerRoutes);

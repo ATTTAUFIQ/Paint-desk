@@ -1,5 +1,8 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LicenseProvider, useLicense } from './context/LicenseContext';
+import LicenseError from './components/common/LicenseError';
+import LicenseConfigPage from './pages/settings/LicenseConfigPage';
 import Layout from './components/Layout';
 import Dashboard from './pages/dashboard/Dashboard';
 import ProductList from './pages/products/ProductList';
@@ -22,17 +25,9 @@ import ExpenseDashboard from './pages/expenses/ExpenseDashboard';
 import ReportDashboard from './pages/reports/ReportDashboard';
 import SettingsPage from './pages/settings/SettingsPage';
 
-// Placeholder for other routes
-const Placeholder = ({ title }) => (
-  <div className="p-6 max-w-7xl mx-auto">
-    <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
-    <p className="text-slate-600 mt-4">Module under construction.</p>
-  </div>
-);
+const AppContent = () => {
+  const { license, loading, hasModuleAccess } = useLicense();
 
-function App() {
-  // Prevent mouse wheel from changing number input values globally
-  // And restrict all number inputs to a maximum of 2 decimal places
   useEffect(() => {
     const handleWheel = (e) => {
       if (document.activeElement && document.activeElement.type === 'number') {
@@ -59,7 +54,7 @@ function App() {
     };
     
     document.addEventListener('wheel', handleWheel, { passive: true });
-    document.addEventListener('input', handleInput, true); // Capture phase to intercept early
+    document.addEventListener('input', handleInput, true); 
     
     return () => {
       document.removeEventListener('wheel', handleWheel);
@@ -67,39 +62,73 @@ function App() {
     };
   }, []);
 
+  if (loading) {
+    return <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>;
+  }
+
+  const isInactive = license && !license.active;
+  const isExpired = license && license.expiryDate && new Date() > new Date(license.expiryDate);
+
+  const ProtectedRoute = ({ moduleName, element }) => {
+    return hasModuleAccess(moduleName) ? element : <Navigate to="/" replace />;
+  };
+
+  return (
+    <Routes>
+      <Route path="/license-config" element={<LicenseConfigPage />} />
+      
+      <Route path="/" element={isInactive ? <LicenseError type="deactivated" /> : isExpired ? <LicenseError type="expired" /> : <Layout />}>
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        
+        {/* Module protected routes */}
+        <Route path="dashboard" element={<ProtectedRoute moduleName="dashboard" element={<Dashboard />} />} />
+        
+        <Route path="products" element={<ProtectedRoute moduleName="products" element={<ProductList />} />} />
+        <Route path="products/new" element={<ProtectedRoute moduleName="products" element={<ProductForm />} />} />
+        <Route path="products/edit/:id" element={<ProtectedRoute moduleName="products" element={<ProductForm />} />} />
+        
+        <Route path="customers" element={<ProtectedRoute moduleName="customers" element={<CustomerList />} />} />
+        <Route path="customers/new" element={<ProtectedRoute moduleName="customers" element={<CustomerForm />} />} />
+        <Route path="customers/edit/:id" element={<ProtectedRoute moduleName="customers" element={<CustomerForm />} />} />
+        <Route path="customers/:id" element={<ProtectedRoute moduleName="customers" element={<CustomerDetails />} />} />
+        
+        <Route path="dealers" element={<ProtectedRoute moduleName="dealers" element={<DealerList />} />} />
+        <Route path="dealers/new" element={<ProtectedRoute moduleName="dealers" element={<DealerForm />} />} />
+        <Route path="dealers/edit/:id" element={<ProtectedRoute moduleName="dealers" element={<DealerForm />} />} />
+        <Route path="dealers/:id" element={<ProtectedRoute moduleName="dealers" element={<DealerDetails />} />} />
+        
+        <Route path="purchases" element={<ProtectedRoute moduleName="purchases" element={<PurchaseList />} />} />
+        <Route path="purchases/new" element={<ProtectedRoute moduleName="purchases" element={<PurchaseForm />} />} />
+        <Route path="purchases/edit/:id" element={<ProtectedRoute moduleName="purchases" element={<PurchaseForm />} />} />
+        <Route path="purchases/:id" element={<ProtectedRoute moduleName="purchases" element={<PurchaseDetails />} />} />
+        
+        <Route path="sales" element={<ProtectedRoute moduleName="sales" element={<SaleList />} />} />
+        <Route path="sales/new" element={<ProtectedRoute moduleName="sales" element={<SaleForm />} />} />
+        <Route path="sales/edit/:id" element={<ProtectedRoute moduleName="sales" element={<SaleForm />} />} />
+        <Route path="sales/:id" element={<ProtectedRoute moduleName="sales" element={<SaleDetails />} />} />
+        
+        {/* Stock is tied to products */}
+        <Route path="stock" element={<ProtectedRoute moduleName="products" element={<StockDashboard />} />} />
+        <Route path="stock/history" element={<ProtectedRoute moduleName="products" element={<StockMovementHistory />} />} />
+        
+        <Route path="expenses" element={<ProtectedRoute moduleName="expenses" element={<ExpenseDashboard />} />} />
+        
+        <Route path="reports" element={<ProtectedRoute moduleName="reports" element={<ReportDashboard />} />} />
+        
+        <Route path="settings" element={<ProtectedRoute moduleName="settings" element={<SettingsPage />} />} />
+      </Route>
+    </Routes>
+  );
+};
+
+function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="products" element={<ProductList />} />
-          <Route path="products/new" element={<ProductForm />} />
-          <Route path="products/edit/:id" element={<ProductForm />} />
-          <Route path="customers" element={<CustomerList />} />
-          <Route path="customers/new" element={<CustomerForm />} />
-          <Route path="customers/edit/:id" element={<CustomerForm />} />
-          <Route path="customers/:id" element={<CustomerDetails />} />
-          <Route path="dealers" element={<DealerList />} />
-          <Route path="dealers/new" element={<DealerForm />} />
-          <Route path="dealers/edit/:id" element={<DealerForm />} />
-          <Route path="dealers/:id" element={<DealerDetails />} />
-          <Route path="purchases" element={<PurchaseList />} />
-          <Route path="purchases/new" element={<PurchaseForm />} />
-          <Route path="purchases/edit/:id" element={<PurchaseForm />} />
-          <Route path="purchases/:id" element={<PurchaseDetails />} />
-          <Route path="sales" element={<SaleList />} />
-          <Route path="sales/new" element={<SaleForm />} />
-          <Route path="sales/edit/:id" element={<SaleForm />} />
-          <Route path="sales/:id" element={<SaleDetails />} />
-          <Route path="stock" element={<StockDashboard />} />
-          <Route path="stock/history" element={<StockMovementHistory />} />
-          <Route path="expenses" element={<ExpenseDashboard />} />
-          <Route path="reports" element={<ReportDashboard />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="license-config" element={<Placeholder title="License Configuration" />} />
-        </Route>
-      </Routes>
+      <LicenseProvider>
+        <AppContent />
+      </LicenseProvider>
     </Router>
   );
 }

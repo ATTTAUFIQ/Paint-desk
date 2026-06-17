@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { checkModuleAccess } = require('../middleware/license');
+router.use(checkModuleAccess('customers'));
 const customerController = require('../controllers/customer.controller');
 
 router.post('/', customerController.createCustomer);

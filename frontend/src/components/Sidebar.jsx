@@ -12,20 +12,23 @@ import {
   BarChart2, 
   Settings 
 } from 'lucide-react';
+import { useLicense } from '../context/LicenseContext';
 
 const Sidebar = () => {
+  const { hasModuleAccess } = useLicense();
+
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Products', path: '/products', icon: Package },
-    { name: 'Customers', path: '/customers', icon: Users },
-    { name: 'Dealers', path: '/dealers', icon: Truck },
-    { name: 'Purchases', path: '/purchases', icon: ShoppingCart },
-    { name: 'Sales', path: '/sales', icon: FileText },
-    { name: 'Stock', path: '/stock', icon: Archive },
-    { name: 'Expenses', path: '/expenses', icon: Wallet },
-    { name: 'Reports', path: '/reports', icon: BarChart2 },
-    { name: 'Settings', path: '/settings', icon: Settings },
-  ];
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, module: 'dashboard' },
+    { name: 'Products', path: '/products', icon: Package, module: 'products' },
+    { name: 'Customers', path: '/customers', icon: Users, module: 'customers' },
+    { name: 'Dealers', path: '/dealers', icon: Truck, module: 'dealers' },
+    { name: 'Purchases', path: '/purchases', icon: ShoppingCart, module: 'purchases' },
+    { name: 'Sales', path: '/sales', icon: FileText, module: 'sales' },
+    { name: 'Stock', path: '/stock', icon: Archive, module: 'products' }, // Stock ties to products
+    { name: 'Expenses', path: '/expenses', icon: Wallet, module: 'expenses' },
+    { name: 'Reports', path: '/reports', icon: BarChart2, module: 'reports' },
+    { name: 'Settings', path: '/settings', icon: Settings, module: 'settings' },
+  ].filter(item => hasModuleAccess(item.module));
 
   return (
     <aside className="w-[260px] bg-white text-slate-600 flex flex-col h-screen sticky top-0 border-r border-slate-200 shadow-sm z-20">
