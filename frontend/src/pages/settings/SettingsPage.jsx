@@ -1,21 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { Settings, Save, Upload, Image as ImageIcon, Building2, Phone, Receipt, FileText } from 'lucide-react';
 import settingService from '../../services/settingService';
+import PageHeader from '../../components/common/PageHeader';
 
 const SettingsPage = () => {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingText, setSavingText] = useState(false);
   const [savingImages, setSavingImages] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
   const [signaturePreview, setSignaturePreview] = useState(null);
-  
+
   const { register, handleSubmit, reset } = useForm();
-  
+
   // File refs
   const [logoFile, setLogoFile] = useState(null);
   const [signatureFile, setSignatureFile] = useState(null);
+
+  useEffect(() => {
+    let sequence = '';
+
+    const handleKeyDown = (e) => {
+      // Don't trigger if the user is actively typing in a text box
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      // Ignore modifier keys
+      if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
+
+      sequence += e.key.toLowerCase();
+
+      // Keep the last 10 characters typed
+      if (sequence.length > 10) {
+        sequence = sequence.slice(-10);
+      }
+
+      // If they type "config", trigger the shortcut
+      if (sequence.includes('config')) {
+        e.preventDefault();
+        alert('Shortcut recognized! Navigating to /license-config');
+        navigate('/license-config');
+        sequence = '';
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -30,10 +66,10 @@ const SettingsPage = () => {
             gstNumber: response.data.gstNumber,
             invoiceFooter: response.data.invoiceFooter,
           });
-          
+
           // Construct base URL from Vite env or fallback to localhost
-          const baseUrl = import.meta.env.VITE_API_URL 
-            ? import.meta.env.VITE_API_URL.replace('/api', '') 
+          const baseUrl = import.meta.env.VITE_API_URL
+            ? import.meta.env.VITE_API_URL.replace('/api', '')
             : 'http://localhost:5000';
 
           if (response.data.logoUrl) setLogoPreview(`${baseUrl}${response.data.logoUrl}`);
@@ -109,24 +145,27 @@ const SettingsPage = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      
+
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-          <Settings className="text-blue-600" /> Platform Settings
-        </h1>
-        <p className="text-slate-500 font-medium text-sm mt-1">Configure your shop details, branding, and invoice templates.</p>
-      </div>
+      <PageHeader
+        title={
+          <div className="flex items-center gap-2">
+            <Settings className="text-blue-600" /> Platform Settings
+          </div>
+        }
+        subtitle="Configure your shop details, branding, and invoice templates."
+        backUrl="/"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Col: Shop Details */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
               <Building2 size={20} className="text-slate-400" /> General Information
             </h2>
-            
+
             <form onSubmit={handleSubmit(onTextSubmit)} className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Shop Name</label>
@@ -215,9 +254,9 @@ const SettingsPage = () => {
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end">
-              <button 
+              <button
                 onClick={uploadImages}
-                disabled={savingImages || (!logoFile && !signatureFile)} 
+                disabled={savingImages || (!logoFile && !signatureFile)}
                 className="w-full flex justify-center items-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-semibold transition-all shadow-md"
               >
                 <Upload size={18} /> {savingImages ? 'Uploading...' : 'Upload Assets'}

@@ -27,7 +27,11 @@ const DealerForm = () => {
         try {
           const response = await dealerService.getDealerById(id);
           if (response.success) {
-            reset(response.data);
+            const data = response.data;
+            if (data.pendingBalance) {
+              data.pendingBalance = parseFloat(parseFloat(data.pendingBalance).toFixed(2));
+            }
+            reset(data);
           }
         } catch (error) {
           setServerError('Failed to fetch dealer details.');

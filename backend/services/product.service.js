@@ -19,10 +19,21 @@ const getProducts = async (query = {}) => {
     filter.brand = brand;
   }
 
+  if (query.stockStatus === 'out') {
+    filter.currentStock = { $lte: 0 };
+  } else if (query.stockStatus === 'low') {
+    filter.$expr = {
+      $and: [
+        { $gt: ["$currentStock", 0] },
+        { $lte: ["$currentStock", "$lowStockLimit"] }
+      ]
+    };
+  }
+
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const [products, total] = await Promise.all([
-    Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+    Product.find(filter).sort({ name: 1 }).skip(skip).limit(parseInt(limit)),
     Product.countDocuments(filter),
   ]);
 

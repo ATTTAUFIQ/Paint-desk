@@ -8,6 +8,10 @@ import html2canvas from 'html2canvas';
 const ReportViewer = ({ title, columns, data, summary }) => {
   const componentRef = useRef();
 
+  // Reverse data to ascending order if it's a date-based report
+  const isDateReport = columns.some(c => c.header === 'Date');
+  const exportData = isDateReport ? [...data].reverse() : data;
+
   const handlePrintFn = useReactToPrint({
     contentRef: componentRef,
     documentTitle: title,
@@ -25,7 +29,7 @@ const ReportViewer = ({ title, columns, data, summary }) => {
 
   const handleExportExcel = () => {
     // Format data for Excel
-    const excelData = data.map(item => {
+    const excelData = exportData.map(item => {
       const row = {};
       columns.forEach(col => {
         row[col.header] = col.render ? col.render(item, true) : item[col.key]; // Pass true if we need plain text version
@@ -198,14 +202,14 @@ const ReportViewer = ({ title, columns, data, summary }) => {
                 </tr>
               </thead>
               <tbody style={{ backgroundColor: '#ffffff' }}>
-                {data.length === 0 ? (
+                {exportData.length === 0 ? (
                   <tr>
                     <td colSpan={columns.length} className="px-6 py-12 text-center font-bold text-base" style={{ backgroundColor: '#f8fafc', color: '#64748b' }}>
                       No data available for this report.
                     </td>
                   </tr>
                 ) : (
-                  data.map((row, idx) => (
+                  exportData.map((row, idx) => (
                     <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                       {columns.map((col, colIdx) => (
                         <td key={colIdx} className={`px-6 py-4 ${colIdx === 0 ? 'font-bold' : 'font-medium'}`} style={{ borderRight: colIdx === columns.length - 1 ? 'none' : '2px solid #f1f5f9', borderBottom: '2px solid #f1f5f9' }}>

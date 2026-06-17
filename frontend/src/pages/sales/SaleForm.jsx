@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, Plus, Trash2, Calculator } from 'lucide-react';
 import saleService from '../../services/saleService';
 import customerService from '../../services/customerService';
 import productService from '../../services/productService';
 import PageHeader from '../../components/common/PageHeader';
+import Select from 'react-select';
 
 const SaleForm = () => {
   const navigate = useNavigate();
@@ -51,7 +52,10 @@ const SaleForm = () => {
           customerService.getCustomers({ limit: 1000 }),
           productService.getProducts({ limit: 1000 })
         ]);
-        if (customersRes.success) setCustomers(customersRes.data.customers);
+        if (customersRes.success) {
+          const sortedCustomers = customersRes.data.customers.sort((a, b) => a.name.localeCompare(b.name));
+          setCustomers(sortedCustomers);
+        }
         
         if (productsRes.success) {
           const prods = productsRes.data.products;
@@ -217,15 +221,52 @@ const SaleForm = () => {
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Registered Customer</label>
-            <select
-              {...register('customerId')}
-              className={inputClasses}
-            >
-              <option value="">-- Miscellaneous (Walk-in) --</option>
-              {customers.map(c => (
-                <option key={c._id} value={c._id}>{c.name} ({c.mobileNumber})</option>
-              ))}
-            </select>
+            <Controller
+              name="customerId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  options={[
+                    { value: '', label: '-- Miscellaneous (Walk-in) --' },
+                    ...customers.map(c => ({ value: c._id, label: `${c.name} (${c.mobileNumber})` }))
+                  ]}
+                  value={
+                    field.value
+                      ? { value: field.value, label: customers.find(c => c._id === field.value) ? `${customers.find(c => c._id === field.value).name} (${customers.find(c => c._id === field.value).mobileNumber})` : '-- Miscellaneous (Walk-in) --' }
+                      : { value: '', label: '-- Miscellaneous (Walk-in) --' }
+                  }
+                  onChange={(val) => field.onChange(val ? val.value : '')}
+                  isClearable={false}
+                  placeholder="Search or Select Customer..."
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      borderRadius: '0.75rem',
+                      padding: '2px',
+                      borderColor: state.isFocused ? '#3b82f6' : '#e2e8f0',
+                      boxShadow: state.isFocused ? '0 0 0 4px rgba(59, 130, 246, 0.1)' : 'none',
+                      backgroundColor: state.isFocused ? '#ffffff' : '#f8fafc',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      borderRadius: '0.75rem',
+                      overflow: 'hidden',
+                      zIndex: 50
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      fontSize: '0.875rem',
+                      backgroundColor: state.isSelected ? '#eff6ff' : state.isFocused ? '#f8fafc' : 'white',
+                      color: state.isSelected ? '#1d4ed8' : '#1e293b',
+                      cursor: 'pointer'
+                    })
+                  }}
+                />
+              )}
+            />
           </div>
 
           {!watch('customerId') && (

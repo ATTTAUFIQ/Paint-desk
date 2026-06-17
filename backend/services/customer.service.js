@@ -22,7 +22,7 @@ const getCustomers = async (query = {}) => {
   if (sortOrder) {
     sortObj.outstandingBalance = sortOrder === 'asc' ? 1 : -1;
   } else {
-    sortObj.createdAt = -1;
+    sortObj.name = 1;
   }
 
   const [customers, total] = await Promise.all([

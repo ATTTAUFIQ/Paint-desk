@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart2, Calendar, FileText, TrendingUp, Users, Truck, Archive, Wallet } from 'lucide-react';
 import reportService from '../../services/reportService';
 import ReportViewer from '../../components/reports/ReportViewer';
+import PageHeader from '../../components/common/PageHeader';
 
 const ReportDashboard = () => {
   const [activeTab, setActiveTab] = useState('sales');
@@ -123,12 +124,15 @@ const ReportDashboard = () => {
     <div className="max-w-7xl mx-auto space-y-6">
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-          <BarChart2 className="text-blue-600" /> Reports Center
-        </h1>
-        <p className="text-slate-500 font-medium text-sm mt-1">Generate, print, and export your business reports.</p>
-      </div>
+      <PageHeader 
+        title={
+          <div className="flex items-center gap-2">
+            <BarChart2 className="text-blue-600" /> Reports Center
+          </div>
+        }
+        subtitle="Generate, print, and export your business reports."
+        backUrl="/"
+      />
 
       <div className="flex flex-col md:flex-row gap-6">
 

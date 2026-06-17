@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Truck, FileText, CheckCircle, XCircle, Edit } from 'lucide-react';
 import purchaseService from '../../services/purchaseService';
 import PageHeader from '../../components/common/PageHeader';
@@ -7,8 +7,11 @@ import PageHeader from '../../components/common/PageHeader';
 const PurchaseDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [purchase, setPurchase] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const backUrl = location.state?.from || "/purchases";
 
   useEffect(() => {
     const fetchPurchase = async () => {
@@ -36,7 +39,7 @@ const PurchaseDetails = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <PageHeader title={`Purchase Order: ${purchase.purchaseNumber}`} backUrl="/purchases">
+      <PageHeader title={`Purchase Order: ${purchase.purchaseNumber}`} backUrl={backUrl}>
         {purchase.status !== 'Cancelled' && (
           <button
             onClick={() => navigate(`/purchases/edit/${id}`)}

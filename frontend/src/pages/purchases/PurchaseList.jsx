@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Eye, XCircle } from 'lucide-react';
 import purchaseService from '../../services/purchaseService';
+import PageHeader from '../../components/common/PageHeader';
 
 const PurchaseList = () => {
   const navigate = useNavigate();
@@ -44,7 +45,11 @@ const PurchaseList = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-end items-center">
+      <PageHeader 
+        title="Purchases" 
+        subtitle="Manage purchase orders and supplier history."
+        backUrl="/"
+      >
         <button
           onClick={() => navigate('/purchases/new')}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0"
@@ -52,7 +57,7 @@ const PurchaseList = () => {
           <Plus size={20} />
           New Purchase Order
         </button>
-      </div>
+      </PageHeader>
 
       <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex gap-4 items-center bg-slate-50/50">
@@ -60,7 +65,7 @@ const PurchaseList = () => {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
             <input
               type="text"
-              placeholder="Search by PO number..."
+              placeholder="Search by PO number or dealer name..."
               className="w-full pl-11 pr-4 py-2.5 bg-white rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}

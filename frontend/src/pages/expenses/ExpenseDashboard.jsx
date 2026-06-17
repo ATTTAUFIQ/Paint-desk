@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Wallet, Search, Plus, Trash2, Edit, Home, Zap, Truck, LayoutList, X } from 'lucide-react';
 import expenseService from '../../services/expenseService';
+import PageHeader from '../../components/common/PageHeader';
 
 const ExpenseDashboard = () => {
   const [expenses, setExpenses] = useState([]);
@@ -82,18 +83,18 @@ const ExpenseDashboard = () => {
     <div className="max-w-7xl mx-auto space-y-6">
       
       {/* Header & Global Actions */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Expense Management</h1>
-          <p className="text-slate-500 font-medium text-sm mt-1">Track and analyze operational costs for the current month.</p>
-        </div>
+      <PageHeader 
+        title="Expense Management" 
+        subtitle="Track and analyze operational costs for the current month."
+        backUrl="/"
+      >
         <button
           onClick={openNewModal}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0"
         >
           <Plus size={20} /> Record Expense
         </button>
-      </div>
+      </PageHeader>
 
       {/* Mini Report / Stats Widgets */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

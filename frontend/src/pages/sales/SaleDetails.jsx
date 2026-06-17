@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { User, FileText, CheckCircle, XCircle, Printer, Download, Edit } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import html2canvas from 'html2canvas';
@@ -11,8 +11,11 @@ import InvoiceTemplate from '../../components/invoice/InvoiceTemplate';
 const SaleDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sale, setSale] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const backUrl = location.state?.from || "/sales";
 
   useEffect(() => {
     const fetchSale = async () => {
@@ -33,7 +36,7 @@ const SaleDetails = () => {
   const componentRef = useRef();
 
   const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
+    contentRef: componentRef,
     documentTitle: `Invoice-${sale?.invoiceNumber || 'Unknown'}`,
   });
 
@@ -102,7 +105,7 @@ const SaleDetails = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <PageHeader title={`Invoice: ${sale.invoiceNumber}`} backUrl="/sales" />
+        <PageHeader title={`Invoice: ${sale.invoiceNumber}`} backUrl={backUrl} />
         <div className="flex gap-3">
           <button
             onClick={handlePrint}

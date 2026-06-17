@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/dashboard/Dashboard';
@@ -31,6 +31,42 @@ const Placeholder = ({ title }) => (
 );
 
 function App() {
+  // Prevent mouse wheel from changing number input values globally
+  // And restrict all number inputs to a maximum of 2 decimal places
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (document.activeElement && document.activeElement.type === 'number') {
+        document.activeElement.blur();
+      }
+    };
+    
+    let isHandlingInput = false;
+    const handleInput = (e) => {
+      if (isHandlingInput) return;
+      if (e.target && e.target.type === 'number') {
+        const val = e.target.value;
+        if (val.includes('.')) {
+          const parts = val.split('.');
+          if (parts[1].length > 2) {
+            isHandlingInput = true;
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            nativeInputValueSetter.call(e.target, parts[0] + '.' + parts[1].slice(0, 2));
+            e.target.dispatchEvent(new Event('input', { bubbles: true }));
+            isHandlingInput = false;
+          }
+        }
+      }
+    };
+    
+    document.addEventListener('wheel', handleWheel, { passive: true });
+    document.addEventListener('input', handleInput, true); // Capture phase to intercept early
+    
+    return () => {
+      document.removeEventListener('wheel', handleWheel);
+      document.removeEventListener('input', handleInput, true);
+    };
+  }, []);
+
   return (
     <Router>
       <Routes>
@@ -61,6 +97,7 @@ function App() {
           <Route path="expenses" element={<ExpenseDashboard />} />
           <Route path="reports" element={<ReportDashboard />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="license-config" element={<Placeholder title="License Configuration" />} />
         </Route>
       </Routes>
     </Router>

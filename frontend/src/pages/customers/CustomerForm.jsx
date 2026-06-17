@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useForm as useHookForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import customerService from '../../services/customerService';
+import PageHeader from '../../components/common/PageHeader';
 
 const CustomerForm = () => {
   const { id } = useParams();
@@ -26,7 +27,11 @@ const CustomerForm = () => {
         try {
           const response = await customerService.getCustomerById(id);
           if (response.success) {
-            reset(response.data);
+            const data = response.data;
+            if (data.outstandingBalance) {
+              data.outstandingBalance = parseFloat(parseFloat(data.outstandingBalance).toFixed(2));
+            }
+            reset(data);
           }
         } catch (error) {
           setServerError('Failed to fetch customer details.');
@@ -55,17 +60,10 @@ const CustomerForm = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-4 mb-2">
-        <button
-          onClick={() => navigate('/customers')}
-          className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl transition-all"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-          {isEdit ? 'Edit Customer' : 'Add New Customer'}
-        </h1>
-      </div>
+      <PageHeader 
+        title={isEdit ? 'Edit Customer' : 'Add New Customer'} 
+        backUrl="/customers" 
+      />
 
       {serverError && (
         <div className="p-4 bg-red-50 text-red-700 rounded-2xl border border-red-100 font-medium">

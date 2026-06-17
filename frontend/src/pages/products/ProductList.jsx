@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
 import productService from '../../services/productService';
+import PageHeader from '../../components/common/PageHeader';
 
 const ProductList = () => {
   const navigate = useNavigate();
@@ -44,7 +45,11 @@ const ProductList = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-end items-center">
+      <PageHeader 
+        title="Products Inventory" 
+        subtitle="Manage your product catalog, pricing, and stock limits."
+        backUrl="/"
+      >
         <button
           onClick={() => navigate('/products/new')}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0"
@@ -52,7 +57,7 @@ const ProductList = () => {
           <Plus size={20} />
           Add Product
         </button>
-      </div>
+      </PageHeader>
 
       <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex gap-4 items-center bg-slate-50/50">
@@ -76,6 +81,7 @@ const ProductList = () => {
             <option value="Nerolac">Nerolac</option>
             <option value="Berger">Berger</option>
             <option value="Dulux">Dulux</option>
+            <option value="Other">Other</option>
           </select>
         </div>
 

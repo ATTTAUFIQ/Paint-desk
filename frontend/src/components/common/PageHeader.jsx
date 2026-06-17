@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
-const PageHeader = ({ title, backUrl, children }) => {
+const PageHeader = ({ title, subtitle, backUrl, children }) => {
   const navigate = useNavigate();
 
   return (
@@ -16,7 +16,10 @@ const PageHeader = ({ title, backUrl, children }) => {
             <ArrowLeft size={20} />
           </button>
         )}
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">{title}</h1>
+          {subtitle && <p className="text-slate-500 font-medium text-sm mt-1">{subtitle}</p>}
+        </div>
       </div>
       {children && (
         <div className="flex items-center gap-3">

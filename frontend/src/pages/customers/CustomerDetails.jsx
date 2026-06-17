@@ -235,7 +235,7 @@ const CustomerDetails = () => {
                   <tbody className="divide-y divide-slate-50">
                     {sales && sales.length > 0 ? (
                       sales.map(sale => (
-                        <tr key={sale._id} className="hover:bg-slate-50/80 transition-colors cursor-pointer" onClick={() => navigate(`/sales/${sale._id}`)}>
+                        <tr key={sale._id} className="hover:bg-slate-50/80 transition-colors cursor-pointer" onClick={() => navigate(`/sales/${sale._id}`, { state: { from: `/customers/${customer._id}` } })}>
                           <td className="px-6 py-4 font-bold text-slate-900">{sale.invoiceNumber}</td>
                           <td className="px-6 py-4 text-slate-600">{new Date(sale.saleDate).toLocaleDateString()}</td>
                           <td className="px-6 py-4 font-semibold text-slate-900">₹{parseFloat(sale.totalAmount).toFixed(2)}</td>

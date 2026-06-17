@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { AlertTriangle, PackageX, Package, Search, SlidersHorizontal, History, X } from 'lucide-react';
 import stockService from '../../services/stockService';
 import productService from '../../services/productService';
+import PageHeader from '../../components/common/PageHeader';
 
 const StockDashboard = () => {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState({ totalProducts: 0, lowStock: 0, outOfStock: 0 });
   const [products, setProducts] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [stockFilter, setStockFilter] = useState(searchParams.get('filter') || 'all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -30,7 +33,12 @@ const StockDashboard = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await productService.getProducts({ search, page, limit: 10 });
+      const response = await productService.getProducts({ 
+        search, 
+        page, 
+        limit: 10,
+        stockStatus: stockFilter !== 'all' ? stockFilter : undefined
+      });
       if (response.success) {
         setProducts(response.data.products);
         setTotalPages(response.data.totalPages);
@@ -45,7 +53,18 @@ const StockDashboard = () => {
   useEffect(() => {
     fetchMetrics();
     fetchProducts();
-  }, [search, page]);
+  }, [search, page, stockFilter]);
+
+  // Sync URL when filter changes
+  useEffect(() => {
+    if (stockFilter === 'all') {
+      searchParams.delete('filter');
+    } else {
+      searchParams.set('filter', stockFilter);
+    }
+    setSearchParams(searchParams, { replace: true });
+    setPage(1);
+  }, [stockFilter]);
 
   const openAdjustmentModal = (product) => {
     setSelectedProduct(product);
@@ -56,22 +75,24 @@ const StockDashboard = () => {
     <div className="max-w-7xl mx-auto space-y-6">
       
       {/* Header & Global Actions */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Inventory Health</h1>
-          <p className="text-slate-500 font-medium text-sm mt-1">Monitor real-time stock levels and low-stock alerts.</p>
-        </div>
+      <PageHeader 
+        title="Inventory Health" 
+        subtitle="Monitor real-time stock levels and low-stock alerts."
+        backUrl="/"
+      >
         <button
           onClick={() => navigate('/stock/history')}
           className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg hover:-translate-y-0.5 active:translate-y-0"
         >
           <History size={18} /> View Audit Trail
         </button>
-      </div>
+      </PageHeader>
 
       {/* Metrics Widgets */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center gap-4">
+        <div 
+          onClick={() => setStockFilter('all')}
+          className={`bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border flex items-center gap-4 cursor-pointer transition-all ${stockFilter === 'all' ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-100 hover:border-blue-200'}`}>
           <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
             <Package size={28} />
           </div>
@@ -81,7 +102,9 @@ const StockDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center gap-4">
+        <div 
+          onClick={() => setStockFilter('low')}
+          className={`bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border flex items-center gap-4 cursor-pointer transition-all ${stockFilter === 'low' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-100 hover:border-amber-200'}`}>
           <div className="w-14 h-14 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center">
             <AlertTriangle size={28} />
           </div>
@@ -91,7 +114,9 @@ const StockDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center gap-4 relative overflow-hidden">
+        <div 
+          onClick={() => setStockFilter('out')}
+          className={`bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border flex items-center gap-4 relative overflow-hidden cursor-pointer transition-all ${stockFilter === 'out' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-slate-100 hover:border-red-200'}`}>
           <div className="absolute right-0 top-0 w-2 h-full bg-red-500"></div>
           <div className="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
             <PackageX size={28} />

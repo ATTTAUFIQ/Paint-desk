@@ -19,7 +19,7 @@ const getDealers = async (query = {}) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const [dealers, total] = await Promise.all([
-    Dealer.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+    Dealer.find(filter).sort({ name: 1 }).skip(skip).limit(parseInt(limit)),
     Dealer.countDocuments(filter),
   ]);
 

@@ -94,7 +94,16 @@ const getSales = async (query = {}) => {
   
   const filter = {};
   if (search) {
-    filter.invoiceNumber = { $regex: search, $options: 'i' };
+    const matchingCustomers = await Customer.find({
+      name: { $regex: search, $options: 'i' }
+    }).select('_id');
+    const customerIds = matchingCustomers.map(c => c._id);
+
+    filter.$or = [
+      { invoiceNumber: { $regex: search, $options: 'i' } },
+      { customerName: { $regex: search, $options: 'i' } },
+      { customerId: { $in: customerIds } }
+    ];
   }
   if (customerId) {
     filter.customerId = customerId;

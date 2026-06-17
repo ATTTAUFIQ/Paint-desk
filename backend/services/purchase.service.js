@@ -86,7 +86,15 @@ const getPurchases = async (query = {}) => {
   
   const filter = {};
   if (search) {
-    filter.purchaseNumber = { $regex: search, $options: 'i' };
+    const matchingDealers = await Dealer.find({
+      name: { $regex: search, $options: 'i' }
+    }).select('_id');
+    const dealerIds = matchingDealers.map(d => d._id);
+
+    filter.$or = [
+      { purchaseNumber: { $regex: search, $options: 'i' } },
+      { dealerId: { $in: dealerIds } }
+    ];
   }
   if (dealerId) {
     filter.dealerId = dealerId;

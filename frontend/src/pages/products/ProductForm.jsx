@@ -3,6 +3,7 @@ import { useForm as useHookForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import productService from '../../services/productService';
+import PageHeader from '../../components/common/PageHeader';
 
 const ProductForm = () => {
   const { id } = useParams();
@@ -59,17 +60,10 @@ const ProductForm = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4 mb-2">
-        <button
-          onClick={() => navigate('/products')}
-          className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-white shadow-sm border border-transparent hover:border-slate-200 rounded-xl transition-all"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-          {isEdit ? 'Edit Product' : 'Add New Product'}
-        </h1>
-      </div>
+      <PageHeader 
+        title={isEdit ? 'Edit Product' : 'Add New Product'} 
+        backUrl="/products" 
+      />
 
       {serverError && (
         <div className="p-4 bg-red-50 text-red-700 rounded-2xl border border-red-100 font-medium">
