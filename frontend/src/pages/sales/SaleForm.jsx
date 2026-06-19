@@ -339,11 +339,11 @@ const SaleForm = () => {
             <table className="w-full text-left">
               <thead className="text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
                 <tr>
-                  <th className="pb-3 w-1/3">Product (Stock)</th>
-                  <th className="pb-3 w-24">Qty</th>
-                  <th className="pb-3 w-32">Price (₹)</th>
-                  <th className="pb-3 w-24">GST (%)</th>
-                  <th className="pb-3 w-32 text-right">Total (₹)</th>
+                  <th className="pb-3 w-1/3 min-w-[200px]">Product (Stock)</th>
+                  <th className="pb-3 w-24 min-w-[100px]">Qty</th>
+                  <th className="pb-3 w-32 min-w-[120px]">Price (₹)</th>
+                  <th className="pb-3 w-24 min-w-[100px]">GST (%)</th>
+                  <th className="pb-3 w-32 min-w-[120px] text-right">Total (₹)</th>
                   <th className="pb-3 w-16"></th>
                 </tr>
               </thead>

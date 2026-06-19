@@ -284,34 +284,36 @@ const ReportViewer = ({ title, columns, data, summary }) => {
           <p className="text-slate-500 font-medium text-sm mt-1">Generated on {new Date().toLocaleString()}</p>
         </div>
 
-        <table className="w-full text-left text-sm text-slate-600 mb-8 border-collapse">
-          <thead className="bg-slate-100 text-slate-700 uppercase font-bold text-xs tracking-wider">
-            <tr>
-              {columns.map((col, idx) => (
-                <th key={idx} className="px-4 py-3 border border-slate-200">{col.header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 border border-slate-200">
-            {data.length === 0 ? (
+        <div className="overflow-x-auto mb-8">
+          <table className="w-full whitespace-nowrap text-left text-sm text-slate-600 border-collapse">
+            <thead className="bg-slate-100 text-slate-700 uppercase font-bold text-xs tracking-wider">
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-slate-400 font-medium border border-slate-200">
-                  No data available for this report.
-                </td>
+                {columns.map((col, idx) => (
+                  <th key={idx} className="px-4 py-3 border border-slate-200">{col.header}</th>
+                ))}
               </tr>
-            ) : (
-              data.map((row, idx) => (
-                <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                  {columns.map((col, colIdx) => (
-                    <td key={colIdx} className="px-4 py-3 border border-slate-200">
-                      {col.render ? col.render(row) : row[col.key]}
-                    </td>
-                  ))}
+            </thead>
+            <tbody className="divide-y divide-slate-100 border border-slate-200">
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length} className="px-4 py-8 text-center text-slate-400 font-medium border border-slate-200">
+                    No data available for this report.
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                data.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    {columns.map((col, colIdx) => (
+                      <td key={colIdx} className="px-4 py-3 border border-slate-200">
+                        {col.render ? col.render(row) : row[col.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Summary Section */}
         {summary && Object.keys(summary).length > 0 && (

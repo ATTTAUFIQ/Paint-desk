@@ -60,8 +60,8 @@ const PurchaseList = () => {
       </PageHeader>
 
       <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex gap-4 items-center bg-slate-50/50">
-          <div className="relative flex-1 max-w-md group">
+        <div className="p-4 md:p-5 border-b border-slate-100 flex flex-col md:flex-row gap-4 md:items-center bg-slate-50/50">
+          <div className="relative flex-1 w-full md:max-w-md group">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
             <input
               type="text"
@@ -74,7 +74,7 @@ const PurchaseList = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
+          <table className="w-full whitespace-nowrap text-left text-sm text-slate-600">
             <thead className="bg-slate-50/80 text-slate-500 uppercase font-semibold text-xs tracking-wider border-b border-slate-100">
               <tr>
                 <th className="px-6 py-4">PO Number</th>

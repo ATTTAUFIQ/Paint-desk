@@ -263,11 +263,11 @@ const QuickSale = () => {
                 <table className="w-full text-left text-sm text-slate-600">
                   <thead className="text-xs uppercase bg-slate-50 text-slate-500 sticky top-0 shadow-sm z-10">
                     <tr>
-                      <th className="px-4 py-3 font-semibold">Product</th>
-                      <th className="px-4 py-3 font-semibold w-32 text-center">Qty</th>
-                      <th className="px-4 py-3 font-semibold text-right">Price</th>
-                      <th className="px-4 py-3 font-semibold text-right">GST</th>
-                      <th className="px-4 py-3 font-semibold text-right">Total</th>
+                      <th className="px-4 py-3 font-semibold min-w-[200px]">Product</th>
+                      <th className="px-4 py-3 font-semibold w-32 text-center min-w-[120px]">Qty</th>
+                      <th className="px-4 py-3 font-semibold text-right min-w-[100px]">Price</th>
+                      <th className="px-4 py-3 font-semibold text-right min-w-[80px]">GST</th>
+                      <th className="px-4 py-3 font-semibold text-right min-w-[100px]">Total</th>
                       <th className="px-4 py-3 font-semibold text-center w-16">Act</th>
                     </tr>
                   </thead>

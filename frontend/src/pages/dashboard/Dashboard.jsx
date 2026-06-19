@@ -101,7 +101,7 @@ const Dashboard = () => {
       </div>
 
       {/* Secondary Metrics (Global) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl p-5 border border-slate-100 flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center"><Users size={20} /></div>
           <div>

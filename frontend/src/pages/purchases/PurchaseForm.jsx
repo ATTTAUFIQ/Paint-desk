@@ -248,11 +248,11 @@ const PurchaseForm = () => {
             <table className="w-full text-left">
               <thead className="text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
                 <tr>
-                  <th className="pb-3 w-1/3">Product</th>
-                  <th className="pb-3 w-32">Qty</th>
-                  <th className="pb-3 w-40">Unit Price (₹)</th>
-                  <th className="pb-3 w-32">GST (%)</th>
-                  <th className="pb-3 w-40 text-right">Total (₹)</th>
+                  <th className="pb-3 w-1/3 min-w-[200px]">Product</th>
+                  <th className="pb-3 w-32 min-w-[100px]">Qty</th>
+                  <th className="pb-3 w-40 min-w-[120px]">Unit Price (₹)</th>
+                  <th className="pb-3 w-32 min-w-[100px]">GST (%)</th>
+                  <th className="pb-3 w-40 min-w-[120px] text-right">Total (₹)</th>
                   <th className="pb-3 w-16"></th>
                 </tr>
               </thead>

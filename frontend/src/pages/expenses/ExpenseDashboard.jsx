@@ -174,7 +174,7 @@ const ExpenseDashboard = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
+          <table className="w-full whitespace-nowrap text-left text-sm text-slate-600">
             <thead className="bg-slate-50/80 text-slate-500 uppercase font-semibold text-xs tracking-wider border-b border-slate-100">
               <tr>
                 <th className="px-6 py-4 w-12">Cat</th>
