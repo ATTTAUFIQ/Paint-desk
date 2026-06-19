@@ -107,36 +107,38 @@ const QuickSale = () => {
     setScanning(true);
     setScanError(null);
     
-    // Check if browser supports mediaDevices
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setScanError("Camera access is not supported. Please use HTTPS or localhost.");
-      setScanning(false);
-      return;
-    }
-
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        const html5QrCode = new Html5Qrcode("reader");
-        scannerRef.current = html5QrCode;
-        html5QrCode.start(
-          { facingMode: "environment" }, 
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          handleScan,
-          (errorMessage) => {
-            // Ignore frame-by-frame normal scan errors
-          }
-        ).catch(err => {
-          setScanError("Camera Error: " + (err?.message || err));
-          setScanning(false);
-        });
-      } else {
-        setScanError("No cameras found on this device.");
+    // Allow React to render the #reader div before initializing
+    setTimeout(() => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setScanError("Camera access is not supported. Please use HTTPS or localhost.");
         setScanning(false);
+        return;
       }
-    }).catch(err => {
-      setScanError("Camera access denied. Please grant permissions and ensure you are on HTTPS.");
-      setScanning(false);
-    });
+
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          const html5QrCode = new Html5Qrcode("reader");
+          scannerRef.current = html5QrCode;
+          html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 30, qrbox: { width: 250, height: 250 } },
+            handleScan,
+            (errorMessage) => {
+              // Ignore frame-by-frame normal scan errors
+            }
+          ).catch(err => {
+            setScanError("Camera Error: " + (err?.message || err));
+            setScanning(false);
+          });
+        } else {
+          setScanError("No cameras found on this device.");
+          setScanning(false);
+        }
+      }).catch(err => {
+        setScanError("Camera access denied. Please grant permissions and ensure you are on HTTPS.");
+        setScanning(false);
+      });
+    }, 100);
   };
 
   const stopScanner = () => {
