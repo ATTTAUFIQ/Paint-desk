@@ -106,55 +106,44 @@ const QuickSale = () => {
   const startScanner = () => {
     setScanning(true);
     setScanError(null);
-    
-    // Allow React to render the #reader div before initializing
-    setTimeout(() => {
+  };
+
+  const stopScanner = () => {
+    setScanning(false);
+  };
+
+  useEffect(() => {
+    let html5QrCode;
+
+    if (scanning) {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setScanError("Camera access is not supported. Please use HTTPS or localhost.");
         setScanning(false);
         return;
       }
 
-      Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length) {
-          const html5QrCode = new Html5Qrcode("reader");
-          scannerRef.current = html5QrCode;
-          html5QrCode.start(
-            { facingMode: "environment" }, 
-            { fps: 30, qrbox: { width: 250, height: 250 } },
-            handleScan,
-            (errorMessage) => {
-              // Ignore frame-by-frame normal scan errors
-            }
-          ).catch(err => {
-            setScanError("Camera Error: " + (err?.message || err));
-            setScanning(false);
-          });
-        } else {
-          setScanError("No cameras found on this device.");
-          setScanning(false);
-        }
-      }).catch(err => {
-        setScanError("Camera access denied. Please grant permissions and ensure you are on HTTPS.");
-        setScanning(false);
-      });
-    }, 100);
-  };
+      html5QrCode = new Html5Qrcode("reader");
+      scannerRef.current = html5QrCode;
 
-  const stopScanner = () => {
-    if (scannerRef.current) {
-      scannerRef.current.stop().then(() => {
-        scannerRef.current.clear();
-        scannerRef.current = null;
-        setScanning(false);
-      }).catch(err => {
-        console.error(err);
+      html5QrCode.start(
+        { facingMode: "environment" }, 
+        { fps: 30, qrbox: { width: 250, height: 250 } },
+        handleScan,
+        undefined
+      ).catch(err => {
+        setScanError("Camera Error: " + (err?.message || err));
         setScanning(false);
       });
-    } else {
-      setScanning(false);
     }
-  };
+
+    return () => {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+        }).catch(err => console.error("Scanner cleanup error:", err));
+      }
+    };
+  }, [scanning]);
 
   const updateQuantity = async (itemId, newQuantity) => {
     try {
