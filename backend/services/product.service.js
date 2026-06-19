@@ -71,15 +71,38 @@ const deleteProduct = async (id) => {
 };
 
 const findProductByScanCode = async (code) => {
+  // Base matching conditions
+  const orConditions = [
+    { productCode: code },
+    { barcode: code },
+    { qrCode: code },
+    { name: { $regex: new RegExp(`^${code}$`, 'i') } }
+  ];
+
+  // If the scanned code looks like a URL, extract the last part for a fuzzy name match
+  // e.g. "https://www.bergerpaints.com/product/walmasta-glow" -> "walmasta glow"
+  try {
+    if (code.startsWith('http://') || code.startsWith('https://')) {
+      const url = new URL(code);
+      const paths = url.pathname.split('/').filter(Boolean);
+      if (paths.length > 0) {
+        const slug = paths[paths.length - 1];
+        // Replace hyphens and underscores with spaces
+        const possibleName = slug.replace(/[-_]/g, ' ').trim();
+        if (possibleName) {
+          orConditions.push({ name: { $regex: new RegExp(possibleName, 'i') } });
+        }
+      }
+    }
+  } catch (err) {
+    // Ignore URL parsing errors
+  }
+
   const product = await Product.findOne({
-    $or: [
-      { productCode: code },
-      { barcode: code },
-      { qrCode: code },
-      { name: { $regex: new RegExp(`^${code}$`, 'i') } }
-    ],
+    $or: orConditions,
     isActive: true
   });
+  
   if (!product) {
     throw new Error('Product not found with this code or name');
   }
