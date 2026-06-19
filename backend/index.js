@@ -40,6 +40,38 @@ const uploadDir = isVercel ? '/tmp/uploads' : path.join(__dirname, 'public/uploa
 app.use('/uploads', express.static(uploadDir));
 console.log('[App] Static uploads configured at:', uploadDir);
 
+// Database connection logic
+let MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/paintdesk';
+if (MONGODB_URI.includes('retryWrites=true')) {
+  MONGODB_URI = MONGODB_URI.replace('retryWrites=true', 'retryWrites=false');
+} else if (!MONGODB_URI.includes('retryWrites=false')) {
+  MONGODB_URI += MONGODB_URI.includes('?') ? '&retryWrites=false' : '?retryWrites=false';
+}
+
+let cachedDb = null;
+const connectDB = async () => {
+  if (cachedDb) return cachedDb;
+  try {
+    const db = await mongoose.connect(MONGODB_URI, { retryWrites: false });
+    cachedDb = db;
+    console.log('[App] Connected to MongoDB successfully.');
+    return db;
+  } catch (err) {
+    console.error('[App] Failed to connect to MongoDB:', err.message);
+    throw err;
+  }
+};
+
+// Global DB Connection Middleware for Serverless Environments
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Database connection failed' });
+  }
+});
+
 // Health check APIs
 app.get('/', (req, res) => {
   res.status(200).send('System is working fine');
@@ -71,40 +103,13 @@ app.use('/api/settings', settingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/drafts', draftRoutes);
 
-// Database connection
 const PORT = process.env.PORT || 5000;
-let MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/paintdesk';
 
-// Forcefully disable retryable writes in the URI string
-if (MONGODB_URI.includes('retryWrites=true')) {
-  MONGODB_URI = MONGODB_URI.replace('retryWrites=true', 'retryWrites=false');
-} else if (!MONGODB_URI.includes('retryWrites=false')) {
-  MONGODB_URI += MONGODB_URI.includes('?') ? '&retryWrites=false' : '?retryWrites=false';
+if (!isVercel) {
+  app.listen(PORT, () => {
+    console.log(`[App] Server is running locally on port ${PORT}`);
+  });
 }
-
-console.log('[App] Attempting MongoDB connection...');
-let cachedDb = null;
-
-const connectDB = async () => {
-  if (cachedDb) return cachedDb;
-  try {
-    const db = await mongoose.connect(MONGODB_URI, { retryWrites: false });
-    cachedDb = db;
-    console.log('[App] Connected to MongoDB successfully.');
-    return db;
-  } catch (err) {
-    console.error('[App] Failed to connect to MongoDB:', err.message);
-    throw err;
-  }
-};
-
-connectDB().then(() => {
-  if (!isVercel) {
-    app.listen(PORT, () => {
-      console.log(`[App] Server is running locally on port ${PORT}`);
-    });
-  }
-}).catch(console.error);
 
 // Required for Vercel deployment
 module.exports = app;
