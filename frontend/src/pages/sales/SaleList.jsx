@@ -194,6 +194,32 @@ const SaleList = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-1 transition-opacity">
                         <button
+                          onClick={() => {
+                            const mobile = sale.customerId?.mobileNumber || '';
+                            // Use the VITE_PUBLIC_URL from .env, fallback to localhost/origin if not found
+                            const baseUrl = import.meta.env.VITE_PUBLIC_URL || window.location.origin;
+                                
+                            const invoiceUrl = `${baseUrl}/public/invoice/${sale._id}`;
+
+                            let message = `Thank you for your business! \n\nView and download your official invoice here: \n${invoiceUrl}`;
+
+                            const encoded = encodeURIComponent(message);
+                            let url;
+                            if (mobile) {
+                              let formattedMobile = mobile.replace(/\D/g, '');
+                              if (formattedMobile.length === 10) formattedMobile = `91${formattedMobile}`;
+                              url = `https://wa.me/${formattedMobile}?text=${encoded}`;
+                            } else {
+                              url = `https://wa.me/?text=${encoded}`;
+                            }
+                            window.open(url, '_blank');
+                          }}
+                          className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                          title="Send E-Invoice Link via WhatsApp"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" /><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" /></svg>
+                        </button>
+                        <button
                           onClick={() => handleDownload(sale._id)}
                           disabled={downloadingSaleId === sale._id}
                           className={`p-2 rounded-lg transition-all ${downloadingSaleId === sale._id ? 'text-emerald-400 animate-pulse' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}

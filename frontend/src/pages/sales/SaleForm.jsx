@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Save, Plus, Trash2, Calculator } from 'lucide-react';
 import saleService from '../../services/saleService';
 import customerService from '../../services/customerService';
@@ -10,6 +10,7 @@ import Select from 'react-select';
 
 const SaleForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const { id } = useParams();
@@ -92,13 +93,52 @@ const SaleForm = () => {
               }))
             });
           }
+        } else if (location.state && location.state.draft) {
+          const draft = location.state.draft;
+          let subT = 0;
+          let totalG = 0;
+          
+          const initialItems = draft.items.map(item => {
+            const pId = item.productId?._id || item.productId || '';
+            const qty = parseFloat(item.quantity) || 1;
+            const price = parseFloat(item.unitPrice?.$numberDecimal || item.unitPrice) || 0;
+            const gstP = parseFloat(item.gstPercentage) || 18;
+            
+            const itemSubT = qty * price;
+            const itemGst = itemSubT * (gstP / 100);
+            
+            subT += itemSubT;
+            totalG += itemGst;
+
+            return {
+              productId: pId,
+              quantity: qty,
+              unitPrice: price.toFixed(2),
+              gstPercentage: gstP,
+              gstAmount: itemGst.toFixed(2),
+              totalPrice: (itemSubT + itemGst).toFixed(2)
+            };
+          });
+
+          reset({
+            invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+            saleDate: new Date().toISOString().split('T')[0],
+            customerId: '',
+            customerName: 'Miscellaneous Customer',
+            subTotal: subT.toFixed(2),
+            totalDiscount: 0,
+            totalGst: totalG.toFixed(2),
+            totalAmount: (subT + totalG).toFixed(2),
+            amountPaid: (subT + totalG).toFixed(2),
+            items: initialItems.length > 0 ? initialItems : [{ productId: '', quantity: 1, unitPrice: 0, gstPercentage: 18, gstAmount: 0, totalPrice: 0 }]
+          });
         }
       } catch (error) {
         console.error('Failed to fetch form dependencies', error);
       }
     };
     fetchData();
-  }, [id, isEdit, reset]);
+  }, [id, isEdit, reset, location.state]);
 
   // Handle product selection change to autofill price & gst
   const handleProductChange = (index, productId) => {

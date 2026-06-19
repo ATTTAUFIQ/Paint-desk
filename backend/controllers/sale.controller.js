@@ -60,10 +60,22 @@ const updateSale = async (req, res) => {
   }
 };
 
+const getPublicSaleById = async (req, res) => {
+  try {
+    // We can reuse the exact same service logic since the frontend only renders what it needs.
+    // The ID itself is a secure random 24-char hex string.
+    const sale = await saleService.getSaleById(req.params.id);
+    res.status(200).json({ success: true, data: sale });
+  } catch (error) {
+    res.status(404).json({ success: false, message: 'Invoice not found' });
+  }
+};
+
 module.exports = {
   createSale,
   getSales,
   getSaleById,
   cancelSale,
   updateSale,
+  getPublicSaleById
 };

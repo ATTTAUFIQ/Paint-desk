@@ -25,6 +25,7 @@ const ExpenseDashboard = React.lazy(() => import('./pages/expenses/ExpenseDashbo
 const ReportDashboard = React.lazy(() => import('./pages/reports/ReportDashboard'));
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'));
 const QuickSale = React.lazy(() => import('./pages/quick/QuickSale'));
+const PublicInvoice = React.lazy(() => import('./pages/sales/PublicInvoice'));
 
 const AppContent = () => {
   const { license, loading, hasModuleAccess, error } = useLicense();
@@ -151,9 +152,24 @@ const AppContent = () => {
 function App() {
   return (
     <Router>
-      <LicenseProvider>
-        <AppContent />
-      </LicenseProvider>
+      <Routes>
+        <Route 
+          path="/public/invoice/:id" 
+          element={
+            <React.Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+              <PublicInvoice />
+            </React.Suspense>
+          } 
+        />
+        <Route 
+          path="/*" 
+          element={
+            <LicenseProvider>
+              <AppContent />
+            </LicenseProvider>
+          } 
+        />
+      </Routes>
     </Router>
   );
 }
