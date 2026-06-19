@@ -75,12 +75,13 @@ const findProductByScanCode = async (code) => {
     $or: [
       { productCode: code },
       { barcode: code },
-      { qrCode: code }
+      { qrCode: code },
+      { name: { $regex: new RegExp(`^${code}$`, 'i') } }
     ],
     isActive: true
   });
   if (!product) {
-    throw new Error('Product not found with this code');
+    throw new Error('Product not found with this code or name');
   }
   return product;
 };
