@@ -14,6 +14,7 @@ const QuickSale = () => {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState(null);
+  const [pendingProduct, setPendingProduct] = useState(null);
   const scannerRef = useRef(null);
 
   const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
@@ -61,14 +62,15 @@ const QuickSale = () => {
   };
 
   const handleScan = async (decodedText) => {
-    if (loading) return; // Prevent multiple scans while processing
+    if (loading || pendingProduct) return; // Prevent multiple scans while processing
     setLoading(true);
     setScanError(null);
     try {
-      const res = await axios.post(`${baseUrl}/drafts/scan`, { code: decodedText }, { withCredentials: true });
+      const res = await axios.post(`${baseUrl}/drafts/scan`, { code: decodedText, lookupOnly: true }, { withCredentials: true });
       if (res.data.success) {
-        setDraft(res.data.data);
+        if (scannerRef.current) scannerRef.current.pause(true);
         playSuccessSound();
+        setPendingProduct(res.data.data);
       }
     } catch (err) {
       setScanError(`Product not found for code: ${decodedText}`);
@@ -76,6 +78,29 @@ const QuickSale = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const confirmAddProduct = async () => {
+    if (!pendingProduct) return;
+    setLoading(true);
+    try {
+      // Add the product for real this time
+      const res = await axios.post(`${baseUrl}/drafts/scan`, { code: pendingProduct.productCode }, { withCredentials: true });
+      if (res.data.success) {
+        setDraft(res.data.data);
+      }
+    } catch (err) {
+      setScanError("Failed to add product to draft");
+    } finally {
+      setPendingProduct(null);
+      setLoading(false);
+      if (scannerRef.current) scannerRef.current.resume();
+    }
+  };
+
+  const cancelAddProduct = () => {
+    setPendingProduct(null);
+    if (scannerRef.current) scannerRef.current.resume();
   };
 
   const startScanner = () => {
@@ -340,6 +365,47 @@ const QuickSale = () => {
         </div>
 
       </div>
+
+      {/* Confirmation Modal */}
+      {pendingProduct && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all scale-100 opacity-100">
+            <div className="p-6">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+                <ScanBarcode size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-center text-slate-800 mb-1">Product Found</h2>
+              <p className="text-center text-slate-500 mb-6">Do you want to add this product to the draft?</p>
+              
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
+                <div className="text-center">
+                  <div className="font-bold text-lg text-slate-800">{pendingProduct.name}</div>
+                  <div className="text-sm font-mono text-slate-500 mt-1">{pendingProduct.productCode}</div>
+                </div>
+                <div className="mt-4 flex justify-between items-center px-4 py-2 bg-white rounded-lg border border-slate-200">
+                  <span className="text-sm text-slate-500 font-medium">Price</span>
+                  <span className="font-bold text-blue-600">₹{parseFloat(pendingProduct.sellingPrice || 0).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelAddProduct}
+                  className="flex-1 px-4 py-3 bg-white text-slate-700 font-bold border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAddProduct}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all"
+                >
+                  Add Product
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
