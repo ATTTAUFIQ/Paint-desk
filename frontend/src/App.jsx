@@ -80,7 +80,7 @@ const AppContent = () => {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">Connection Error</h2>
-          <p className="text-slate-600 mb-2">Could not connect to the backend server to verify your license. Please ensure your backend is running and VITE_API_URL is correctly configured.</p>
+          <p className="text-slate-600 mb-2">Could not connect to the server to verify your license. Please ensure you are connected to the internet and the server is currently online.</p>
         </div>
       </div>
     );
