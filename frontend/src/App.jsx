@@ -80,10 +80,7 @@ const AppContent = () => {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">Connection Error</h2>
-          <p className="text-slate-600 mb-6">Could not connect to the backend server to verify your license. Please ensure your backend is running and VITE_API_URL is correctly configured.</p>
-          <a href="/license-config" className="block w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors">
-            Configure License Manually
-          </a>
+          <p className="text-slate-600 mb-2">Could not connect to the backend server to verify your license. Please ensure your backend is running and VITE_API_URL is correctly configured.</p>
         </div>
       </div>
     );
