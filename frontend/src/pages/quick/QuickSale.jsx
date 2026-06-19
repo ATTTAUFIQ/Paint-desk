@@ -205,7 +205,7 @@ const QuickSale = () => {
               <ScanBarcode className="text-blue-600" /> Barcode / QR Scanner
             </h3>
 
-            {!scanning ? (
+            <div className={scanning ? "hidden" : "block"}>
               <div className="text-center py-10 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
                 <ScanBarcode size={48} className="mx-auto text-slate-400 mb-4" />
                 <p className="text-slate-600 mb-6 font-medium">Click below to open the camera and start scanning products.</p>
@@ -216,17 +216,17 @@ const QuickSale = () => {
                   <Play size={18} /> Start Scanner
                 </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div id="reader" className="w-full bg-black rounded-xl overflow-hidden shadow-inner"></div>
-                <button
-                  onClick={stopScanner}
-                  className="bg-red-50 hover:bg-red-100 text-red-600 px-6 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 w-full border border-red-200"
-                >
-                  <Square size={18} /> Stop Scanner
-                </button>
-              </div>
-            )}
+            </div>
+
+            <div className={scanning ? "block space-y-4" : "hidden"}>
+              <div id="reader" className="w-full bg-black rounded-xl overflow-hidden shadow-inner min-h-[300px]"></div>
+              <button
+                onClick={stopScanner}
+                className="bg-red-50 hover:bg-red-100 text-red-600 px-6 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 w-full border border-red-200"
+              >
+                <Square size={18} /> Stop Scanner
+              </button>
+            </div>
 
             {scanError && (
               <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg flex items-start gap-2 border border-red-100 animate-pulse">
