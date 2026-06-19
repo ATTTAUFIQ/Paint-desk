@@ -14,6 +14,8 @@ const ProductForm = () => {
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useHookForm({
     defaultValues: {
       productCode: '',
+      barcode: '',
+      qrCode: '',
       name: '',
       brand: '',
       unitType: 'Ltr',
@@ -90,6 +92,26 @@ const ProductForm = () => {
               placeholder="e.g. AP-ROY-1L"
             />
             {errors.productCode && <p className="text-red-500 text-xs font-medium mt-1.5">{errors.productCode.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Barcode</label>
+            <input
+              type="text"
+              {...register('barcode')}
+              className={inputClasses}
+              placeholder="e.g. 890123456789"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">QR Code / URL</label>
+            <input
+              type="text"
+              {...register('qrCode')}
+              className={inputClasses}
+              placeholder="e.g. https://www.bergerpaints.com/..."
+            />
           </div>
 
           <div>

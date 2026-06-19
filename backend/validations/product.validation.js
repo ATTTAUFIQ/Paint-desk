@@ -2,6 +2,8 @@ const Joi = require('joi');
 
 const createProductSchema = Joi.object({
   productCode: Joi.string().required().trim(),
+  barcode: Joi.string().trim().allow(null, ''),
+  qrCode: Joi.string().trim().allow(null, ''),
   name: Joi.string().required().trim(),
   brand: Joi.string().required(),
   unitType: Joi.string().valid('Ltr', 'Kg', 'Pcs', 'Gal').required(),
@@ -16,6 +18,8 @@ const createProductSchema = Joi.object({
 
 const updateProductSchema = Joi.object({
   productCode: Joi.string().trim(),
+  barcode: Joi.string().trim().allow(null, ''),
+  qrCode: Joi.string().trim().allow(null, ''),
   name: Joi.string().trim(),
   brand: Joi.string(),
   unitType: Joi.string().valid('Ltr', 'Kg', 'Pcs', 'Gal'),
