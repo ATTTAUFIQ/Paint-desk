@@ -87,10 +87,10 @@ const findProductByScanCode = async (code) => {
       const paths = url.pathname.split('/').filter(Boolean);
       if (paths.length > 0) {
         const slug = paths[paths.length - 1];
-        // Replace hyphens and underscores with spaces
-        const possibleName = slug.replace(/[-_]/g, ' ').trim();
-        if (possibleName) {
-          orConditions.push({ name: { $regex: new RegExp(possibleName, 'i') } });
+        // Replace hyphens and underscores with a pattern that matches spaces, hyphens, or underscores
+        const regexPattern = slug.replace(/[-_]/g, '[-_ ]+').trim();
+        if (regexPattern) {
+          orConditions.push({ name: { $regex: new RegExp(regexPattern, 'i') } });
         }
       }
     }
