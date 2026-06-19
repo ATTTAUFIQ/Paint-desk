@@ -81,24 +81,52 @@ const QuickSale = () => {
   const startScanner = () => {
     setScanning(true);
     setScanError(null);
-    setTimeout(() => {
-      scannerRef.current = new Html5QrcodeScanner(
-        "reader",
-        { fps: 10, qrbox: { width: 250, height: 250 }, rememberLastUsedCamera: true },
-        /* verbose= */ false
-      );
-      scannerRef.current.render(handleScan, (error) => {
-        // Ignore normal scan errors (no code found)
-      });
-    }, 100);
+    
+    // Check if browser supports mediaDevices
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setScanError("Camera access is not supported. Please use HTTPS or localhost.");
+      setScanning(false);
+      return;
+    }
+
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        const html5QrCode = new Html5Qrcode("reader");
+        scannerRef.current = html5QrCode;
+        html5QrCode.start(
+          { facingMode: "environment" }, 
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          handleScan,
+          (errorMessage) => {
+            // Ignore frame-by-frame normal scan errors
+          }
+        ).catch(err => {
+          setScanError("Camera Error: " + (err?.message || err));
+          setScanning(false);
+        });
+      } else {
+        setScanError("No cameras found on this device.");
+        setScanning(false);
+      }
+    }).catch(err => {
+      setScanError("Camera access denied. Please grant permissions and ensure you are on HTTPS.");
+      setScanning(false);
+    });
   };
 
   const stopScanner = () => {
     if (scannerRef.current) {
-      scannerRef.current.clear().catch(console.error);
-      scannerRef.current = null;
+      scannerRef.current.stop().then(() => {
+        scannerRef.current.clear();
+        scannerRef.current = null;
+        setScanning(false);
+      }).catch(err => {
+        console.error(err);
+        setScanning(false);
+      });
+    } else {
+      setScanning(false);
     }
-    setScanning(false);
   };
 
   const updateQuantity = async (itemId, newQuantity) => {
