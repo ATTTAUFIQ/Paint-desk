@@ -10,19 +10,10 @@ const getActiveDraft = async () => {
   return draft;
 };
 
-const scanProductToDraft = async (code) => {
-  const product = await Product.findOne({
-    $or: [
-      { productCode: code },
-      { barcode: code },
-      { qrCode: code }
-    ],
-    isActive: true
-  });
+const productService = require('./product.service');
 
-  if (!product) {
-    throw new Error('Product not found with this code');
-  }
+const scanProductToDraft = async (code) => {
+  const product = await productService.findProductByScanCode(code);
 
   const draft = await getActiveDraft();
 
