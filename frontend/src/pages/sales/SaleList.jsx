@@ -201,7 +201,8 @@ const SaleList = () => {
                                 
                             const invoiceUrl = `${baseUrl}/public/invoice/${sale._id}`;
 
-                            let message = `Thank you for your business! \n\nView and download your official invoice here: \n${invoiceUrl}`;
+                            const customerName = sale.customerId?.name || sale.customerName || 'Customer';
+                            let message = `Hi ${customerName}, thank you for your business! \n\nView and download your official invoice here: \n${invoiceUrl}`;
 
                             const encoded = encodeURIComponent(message);
                             let url;
