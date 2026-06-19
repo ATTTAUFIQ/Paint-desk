@@ -71,19 +71,29 @@ const deleteProduct = async (id) => {
 };
 
 const findProductByScanCode = async (code) => {
+  // Clean the code of any leading/trailing whitespace
+  const cleanCode = code.trim();
+
   // Base matching conditions
   const orConditions = [
-    { productCode: code },
-    { barcode: code },
-    { qrCode: code },
-    { name: { $regex: new RegExp(`^${code}$`, 'i') } }
+    { productCode: cleanCode },
+    { barcode: cleanCode },
+    { qrCode: cleanCode },
+    { name: { $regex: new RegExp(`^${cleanCode}$`, 'i') } }
   ];
 
   // If the scanned code looks like a URL, extract the last part for a fuzzy name match
-  // e.g. "https://www.bergerpaints.com/product/walmasta-glow" -> "walmasta glow"
   try {
-    if (code.startsWith('http://') || code.startsWith('https://')) {
-      const url = new URL(code);
+    let urlString = cleanCode;
+    // Handle QR codes that might be uppercase or missing http://
+    if (!urlString.toLowerCase().startsWith('http')) {
+      if (urlString.toLowerCase().includes('www.') || urlString.toLowerCase().includes('.com') || urlString.toLowerCase().includes('.in')) {
+        urlString = 'https://' + urlString;
+      }
+    }
+
+    if (urlString.toLowerCase().startsWith('http')) {
+      const url = new URL(urlString);
       const paths = url.pathname.split('/').filter(Boolean);
       if (paths.length > 0) {
         const slug = paths[paths.length - 1];
