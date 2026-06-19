@@ -38,6 +38,9 @@ const saleItemSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Add index for performance (top selling products)
+saleItemSchema.index({ productId: 1 });
+
 saleItemSchema.set('toJSON', {
   transform: (doc, ret) => {
     if (ret.unitPrice) ret.unitPrice = ret.unitPrice.toString();

@@ -28,6 +28,9 @@ const expenseSchema = new mongoose.Schema({
   // recordedBy is omitted for now as we don't have an auth module
 }, { timestamps: true });
 
+// Add indexes for performance
+expenseSchema.index({ expenseDate: -1 });
+
 // Convert Decimal128 to string for JSON responses
 expenseSchema.set('toJSON', {
   transform: (doc, ret) => {

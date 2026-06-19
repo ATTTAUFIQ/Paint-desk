@@ -24,7 +24,7 @@ const Sidebar = () => {
     { name: 'Dealers', path: '/dealers', icon: Truck, module: 'dealers' },
     { name: 'Purchases', path: '/purchases', icon: ShoppingCart, module: 'purchases' },
     { name: 'Sales', path: '/sales', icon: FileText, module: 'sales' },
-    { name: 'Stock', path: '/stock', icon: Archive, module: 'products' }, // Stock ties to products
+    { name: 'Stock', path: '/stock', icon: Archive, module: 'stock' },
     { name: 'Expenses', path: '/expenses', icon: Wallet, module: 'expenses' },
     { name: 'Reports', path: '/reports', icon: BarChart2, module: 'reports' },
     { name: 'Settings', path: '/settings', icon: Settings, module: 'settings' },

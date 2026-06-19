@@ -1,7 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLicense } from '../../context/LicenseContext';
-import { ShieldAlert, ShieldCheck, Save, Calendar, LayoutGrid, CheckCircle2, XCircle } from 'lucide-react';
+import { 
+  ShieldAlert, ShieldCheck, Save, Calendar, LayoutGrid, Lock,
+  LayoutDashboard, Package, Users, Truck, ShoppingCart, FileText, Archive, Wallet, BarChart2, Settings, AlertTriangle
+} from 'lucide-react';
+
+const moduleIcons = {
+  dashboard: LayoutDashboard,
+  products: Package,
+  customers: Users,
+  dealers: Truck,
+  purchases: ShoppingCart,
+  sales: FileText,
+  stock: Archive,
+  expenses: Wallet,
+  reports: BarChart2,
+  settings: Settings
+};
 
 const LicenseConfigPage = () => {
   const { refreshLicense } = useLicense();
@@ -17,6 +33,7 @@ const LicenseConfigPage = () => {
       dealers: true,
       purchases: true,
       sales: true,
+      stock: true,
       expenses: true,
       reports: true,
       settings: true
@@ -70,94 +87,151 @@ const LicenseConfigPage = () => {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading Configuration...</div>;
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+         <div className="flex flex-col items-center gap-3">
+           <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+           <p className="text-slate-500 font-medium">Loading configuration...</p>
+         </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-6xl mx-auto space-y-6">
         
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-          <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-                <ShieldAlert className="text-indigo-600" /> License & Security Control
-              </h1>
-              <p className="text-slate-500 mt-2">Manage ERP activation, set expiry dates, and toggle module access.</p>
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+              <Lock size={24} />
             </div>
-            
-            <button 
-              onClick={handleSave} 
-              disabled={saving}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-md flex items-center gap-2"
-            >
-              <Save size={18} /> {saving ? 'Saving...' : 'Save Changes'}
-            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">License & Security Management</h1>
+              <p className="text-slate-500 text-sm mt-1">Configure system availability, expiration dates, and granular module access control.</p>
+            </div>
           </div>
+          <button 
+            onClick={handleSave} 
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-100 transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+          >
+            <Save size={18} />
+            {saving ? 'Saving Changes...' : 'Save Configuration'}
+          </button>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-            {/* ERP Status */}
-            <div className={`p-6 rounded-2xl border-2 transition-all ${config.active ? 'border-green-500 bg-green-50/50' : 'border-red-500 bg-red-50/50'}`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                  {config.active ? <ShieldCheck className="text-green-600" /> : <ShieldAlert className="text-red-600" />}
-                  ERP Status
-                </h3>
-                <span className={`px-3 py-1 text-xs font-bold rounded-full ${config.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column: Core Settings */}
+          <div className="space-y-6">
+            {/* System Status */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <ShieldCheck size={20} className="text-slate-400" /> System Status
+                </h2>
+                <span className={`px-2.5 py-1 text-xs font-bold rounded-md ${config.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                   {config.active ? 'ACTIVE' : 'DEACTIVATED'}
                 </span>
               </div>
-              <p className="text-sm text-slate-600 mb-6">When deactivated, the entire ERP system will be locked for all users immediately.</p>
-              
-              <button 
-                onClick={() => setConfig({ ...config, active: !config.active })}
-                className={`w-full py-3 rounded-xl font-bold text-sm transition-all shadow-sm ${
-                  config.active ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'
-                }`}
-              >
-                {config.active ? 'DEACTIVATE ERP NOW' : 'ACTIVATE ERP'}
-              </button>
+              <div className="p-5">
+                <div className={`p-4 rounded-lg border flex items-start gap-3 mb-5 ${config.active ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
+                  <AlertTriangle className={`w-5 h-5 shrink-0 ${config.active ? 'text-emerald-600' : 'text-red-600'}`} />
+                  <p className={`text-sm leading-relaxed ${config.active ? 'text-emerald-800' : 'text-red-800'}`}>
+                    {config.active 
+                      ? "System is fully operational. Deactivating will immediately lock all active sessions."
+                      : "System is currently locked. Users cannot log in or perform any actions."}
+                  </p>
+                </div>
+                
+                <button 
+                  onClick={() => setConfig({ ...config, active: !config.active })}
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-colors flex justify-center items-center gap-2 border ${
+                    config.active 
+                      ? 'bg-white text-red-600 border-red-200 hover:bg-red-50' 
+                      : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
+                  }`}
+                >
+                  {config.active ? 'Deactivate System' : 'Activate System'}
+                </button>
+              </div>
             </div>
 
-            {/* Expiry Date */}
-            <div className="p-6 rounded-2xl border-2 border-slate-100 bg-white">
-               <div className="flex items-center mb-4">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                  <Calendar className="text-blue-500" /> License Expiry Date
-                </h3>
+            {/* License Expiry */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+               <div className="p-5 border-b border-slate-100">
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <Calendar size={20} className="text-slate-400" /> License Expiry
+                </h2>
               </div>
-              <p className="text-sm text-slate-600 mb-6">The system will automatically lock when the current date passes this expiry date.</p>
-              
-              <input 
-                type="date" 
-                value={config.expiryDate}
-                onChange={(e) => setConfig({ ...config, expiryDate: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-slate-800"
-              />
+              <div className="p-5">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Automated Lock-out Date</label>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                  The ERP system will automatically transition to a locked state after this date.
+                </p>
+                <div className="relative">
+                  <input 
+                    type="date" 
+                    value={config.expiryDate}
+                    onChange={(e) => setConfig({ ...config, expiryDate: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-slate-800 font-medium"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Module Access */}
-          <div className="pt-6 border-t border-slate-100">
-            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <LayoutGrid className="text-slate-500" /> Module Access Control
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(config.modules).map(([moduleName, isEnabled]) => (
-                <div 
-                  key={moduleName} 
-                  onClick={() => handleModuleToggle(moduleName)}
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    isEnabled ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-200 bg-slate-50 hover:border-slate-300'
-                  }`}
-                >
-                  <span className={`font-semibold capitalize ${isEnabled ? 'text-indigo-900' : 'text-slate-500'}`}>
-                    {moduleName}
-                  </span>
-                  {isEnabled ? <CheckCircle2 className="text-indigo-600" /> : <XCircle className="text-slate-400" />}
+          {/* Right Column: Module Access */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <LayoutGrid size={20} className="text-slate-400" /> Module Access Control
+                </h2>
+                <div className="text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-md border border-slate-200">
+                  {Object.values(config.modules).filter(Boolean).length} of {Object.keys(config.modules).length} Active
                 </div>
-              ))}
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Object.entries(config.modules).map(([moduleName, isEnabled]) => {
+                    const Icon = moduleIcons[moduleName] || LayoutGrid;
+                    return (
+                      <div 
+                        key={moduleName} 
+                        onClick={() => handleModuleToggle(moduleName)}
+                        className={`group cursor-pointer rounded-lg border p-4 flex items-center justify-between transition-all duration-200 ${
+                          isEnabled 
+                            ? 'bg-white border-slate-300 hover:border-blue-400 hover:shadow-sm' 
+                            : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-md transition-colors ${isEnabled ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
+                            <Icon size={18} />
+                          </div>
+                          <div>
+                            <h4 className={`text-sm font-semibold capitalize ${isEnabled ? 'text-slate-800' : 'text-slate-500'}`}>
+                              {moduleName}
+                            </h4>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {isEnabled ? 'Access Granted' : 'Access Revoked'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Professional Toggle Switch */}
+                        <div className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" style={{ backgroundColor: isEnabled ? '#2563eb' : '#cbd5e1' }}>
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition shadow-sm ${isEnabled ? 'translate-x-4' : 'translate-x-1'}`} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 

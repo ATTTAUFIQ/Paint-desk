@@ -48,6 +48,9 @@ const purchaseSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Add indexes for performance
+purchaseSchema.index({ purchaseDate: -1 });
+
 // Virtual to populate items
 purchaseSchema.virtual('items', {
   ref: 'PurchaseItem',

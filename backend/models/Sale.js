@@ -56,6 +56,9 @@ const saleSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Add indexes for performance
+saleSchema.index({ saleDate: -1 });
+
 // Virtual to populate items
 saleSchema.virtual('items', {
   ref: 'SaleItem',

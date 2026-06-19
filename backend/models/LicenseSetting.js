@@ -17,6 +17,7 @@ const licenseSettingSchema = new mongoose.Schema({
     dealers: { type: Boolean, default: true },
     purchases: { type: Boolean, default: true },
     sales: { type: Boolean, default: true },
+    stock: { type: Boolean, default: true },
     expenses: { type: Boolean, default: true },
     reports: { type: Boolean, default: true },
     settings: { type: Boolean, default: true }
