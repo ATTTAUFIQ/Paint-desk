@@ -10,7 +10,7 @@ export const LicenseProvider = ({ children }) => {
 
   const fetchLicense = async () => {
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
       // License route is at /api/license
       const response = await axios.get(`${baseUrl}/license`);
       if (response.data && response.data.success) {

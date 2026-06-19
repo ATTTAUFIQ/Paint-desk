@@ -16,7 +16,7 @@ const QuickSale = () => {
   const [scanError, setScanError] = useState(null);
   const scannerRef = useRef(null);
 
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
 
   useEffect(() => {
     fetchDraft();
