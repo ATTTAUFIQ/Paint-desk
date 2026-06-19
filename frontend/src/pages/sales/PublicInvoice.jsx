@@ -12,9 +12,31 @@ const PublicInvoice = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [scale, setScale] = useState(1);
   const componentRef = useRef();
+  const containerRef = useRef();
 
   const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        // The invoice template is 794px wide. We use 820px to leave some padding.
+        if (containerWidth < 820) {
+          setScale(containerWidth / 820);
+        } else {
+          setScale(1);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    // Give it a tiny delay to ensure DOM layout is complete before first calculation
+    setTimeout(handleResize, 50);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sale]);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -133,11 +155,15 @@ const PublicInvoice = () => {
         </div>
 
         {/* Invoice View Area */}
-        <div className="bg-white shadow-xl shadow-slate-200/50 rounded-2xl overflow-hidden border border-slate-200">
-          {/* We render the template directly. The template is typically styled as an A4 page, 
-              so we add an overflow wrapper if needed for mobile viewing. */}
-          <div className="overflow-x-auto p-4 md:p-8 bg-slate-200/50 flex justify-center">
-            <div className="bg-white shadow-sm ring-1 ring-slate-900/5 sm:rounded-lg">
+        <div className="bg-white shadow-xl shadow-slate-200/50 rounded-2xl overflow-hidden border border-slate-200 w-full" ref={containerRef}>
+          <div 
+            className="w-full flex justify-center bg-slate-200/50 py-4 md:py-8"
+            style={{ height: `${(1123 * scale) + (window.innerWidth < 768 ? 32 : 64)}px` }}
+          >
+            <div 
+              className="bg-white shadow-sm ring-1 ring-slate-900/5 sm:rounded-lg origin-top"
+              style={{ transform: `scale(${scale})` }}
+            >
               <InvoiceTemplate sale={sale} />
             </div>
           </div>
