@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLicense } from '../../context/LicenseContext';
-import { 
+import {
   ShieldAlert, ShieldCheck, Save, Calendar, LayoutGrid, Lock,
-  LayoutDashboard, Package, Users, Truck, ShoppingCart, FileText, Archive, Wallet, BarChart2, Settings, AlertTriangle
+  LayoutDashboard, Package, Users, Truck, ShoppingCart, FileText, Archive, Wallet, BarChart2, Settings, AlertTriangle, ScanBarcode
 } from 'lucide-react';
 
 const moduleIcons = {
@@ -14,6 +14,7 @@ const moduleIcons = {
   purchases: ShoppingCart,
   sales: FileText,
   stock: Archive,
+  quick: ScanBarcode,
   expenses: Wallet,
   reports: BarChart2,
   settings: Settings
@@ -34,6 +35,7 @@ const LicenseConfigPage = () => {
       purchases: true,
       sales: true,
       stock: true,
+      quick: true,
       expenses: true,
       reports: true,
       settings: true
@@ -89,10 +91,10 @@ const LicenseConfigPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-         <div className="flex flex-col items-center gap-3">
-           <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-           <p className="text-slate-500 font-medium">Loading configuration...</p>
-         </div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-medium">Loading configuration...</p>
+        </div>
       </div>
     );
   }
@@ -100,7 +102,7 @@ const LicenseConfigPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
-        
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-4">
@@ -112,8 +114,8 @@ const LicenseConfigPage = () => {
               <p className="text-slate-500 text-sm mt-1">Configure system availability, expiration dates, and granular module access control.</p>
             </div>
           </div>
-          <button 
-            onClick={handleSave} 
+          <button
+            onClick={handleSave}
             disabled={saving}
             className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-100 transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
           >
@@ -123,7 +125,7 @@ const LicenseConfigPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Left Column: Core Settings */}
           <div className="space-y-6">
             {/* System Status */}
@@ -140,19 +142,18 @@ const LicenseConfigPage = () => {
                 <div className={`p-4 rounded-lg border flex items-start gap-3 mb-5 ${config.active ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
                   <AlertTriangle className={`w-5 h-5 shrink-0 ${config.active ? 'text-emerald-600' : 'text-red-600'}`} />
                   <p className={`text-sm leading-relaxed ${config.active ? 'text-emerald-800' : 'text-red-800'}`}>
-                    {config.active 
+                    {config.active
                       ? "System is fully operational. Deactivating will immediately lock all active sessions."
                       : "System is currently locked. Users cannot log in or perform any actions."}
                   </p>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={() => setConfig({ ...config, active: !config.active })}
-                  className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-colors flex justify-center items-center gap-2 border ${
-                    config.active 
-                      ? 'bg-white text-red-600 border-red-200 hover:bg-red-50' 
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-colors flex justify-center items-center gap-2 border ${config.active
+                      ? 'bg-white text-red-600 border-red-200 hover:bg-red-50'
                       : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
-                  }`}
+                    }`}
                 >
                   {config.active ? 'Deactivate System' : 'Activate System'}
                 </button>
@@ -161,7 +162,7 @@ const LicenseConfigPage = () => {
 
             {/* License Expiry */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-               <div className="p-5 border-b border-slate-100">
+              <div className="p-5 border-b border-slate-100">
                 <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                   <Calendar size={20} className="text-slate-400" /> License Expiry
                 </h2>
@@ -172,8 +173,8 @@ const LicenseConfigPage = () => {
                   The ERP system will automatically transition to a locked state after this date.
                 </p>
                 <div className="relative">
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={config.expiryDate}
                     onChange={(e) => setConfig({ ...config, expiryDate: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-slate-800 font-medium"
@@ -194,20 +195,19 @@ const LicenseConfigPage = () => {
                   {Object.values(config.modules).filter(Boolean).length} of {Object.keys(config.modules).length} Active
                 </div>
               </div>
-              
+
               <div className="p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Object.entries(config.modules).map(([moduleName, isEnabled]) => {
                     const Icon = moduleIcons[moduleName] || LayoutGrid;
                     return (
-                      <div 
-                        key={moduleName} 
+                      <div
+                        key={moduleName}
                         onClick={() => handleModuleToggle(moduleName)}
-                        className={`group cursor-pointer rounded-lg border p-4 flex items-center justify-between transition-all duration-200 ${
-                          isEnabled 
-                            ? 'bg-white border-slate-300 hover:border-blue-400 hover:shadow-sm' 
+                        className={`group cursor-pointer rounded-lg border p-4 flex items-center justify-between transition-all duration-200 ${isEnabled
+                            ? 'bg-white border-slate-300 hover:border-blue-400 hover:shadow-sm'
                             : 'bg-slate-50 border-slate-200 hover:border-slate-300'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-md transition-colors ${isEnabled ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>

@@ -14,6 +14,7 @@ const reportRoutes = require('./routes/report.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const settingRoutes = require('./routes/setting.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const draftRoutes = require('./routes/draft.routes');
 const licenseRoutes = require('./routes/license.routes'); // <-- NEW
 const { checkLicense } = require('./middleware/license'); // <-- NEW
 const path = require('path');
@@ -66,6 +67,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/drafts', draftRoutes);
 
 // Database connection
 const PORT = process.env.PORT || 5000;

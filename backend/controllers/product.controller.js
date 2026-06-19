@@ -60,10 +60,20 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const scanProduct = async (req, res) => {
+  try {
+    const product = await productService.findProductByScanCode(req.params.code);
+    res.status(200).json({ success: true, data: product });
+  } catch (error) {
+    res.status(404).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createProduct,
   getProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  scanProduct,
 };

@@ -70,10 +70,26 @@ const deleteProduct = async (id) => {
   return product;
 };
 
+const findProductByScanCode = async (code) => {
+  const product = await Product.findOne({
+    $or: [
+      { productCode: code },
+      { barcode: code },
+      { qrCode: code }
+    ],
+    isActive: true
+  });
+  if (!product) {
+    throw new Error('Product not found with this code');
+  }
+  return product;
+};
+
 module.exports = {
   createProduct,
   getProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  findProductByScanCode,
 };

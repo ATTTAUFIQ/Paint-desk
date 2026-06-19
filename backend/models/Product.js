@@ -7,6 +7,18 @@ const productSchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
+  barcode: {
+    type: String,
+    sparse: true,
+    unique: true,
+    trim: true,
+  },
+  qrCode: {
+    type: String,
+    sparse: true,
+    unique: true,
+    trim: true,
+  },
   name: {
     type: String,
     required: true,

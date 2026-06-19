@@ -10,7 +10,8 @@ import {
   Archive,
   Wallet,
   BarChart2, 
-  Settings 
+  Settings,
+  ScanBarcode
 } from 'lucide-react';
 import { useLicense } from '../context/LicenseContext';
 
@@ -19,6 +20,7 @@ const Sidebar = () => {
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, module: 'dashboard' },
+    { name: 'Quick Scan', path: '/quick', icon: ScanBarcode, module: 'quick' },
     { name: 'Products', path: '/products', icon: Package, module: 'products' },
     { name: 'Customers', path: '/customers', icon: Users, module: 'customers' },
     { name: 'Dealers', path: '/dealers', icon: Truck, module: 'dealers' },

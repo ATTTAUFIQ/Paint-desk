@@ -24,6 +24,7 @@ const StockMovementHistory = React.lazy(() => import('./pages/stock/StockMovemen
 const ExpenseDashboard = React.lazy(() => import('./pages/expenses/ExpenseDashboard'));
 const ReportDashboard = React.lazy(() => import('./pages/reports/ReportDashboard'));
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'));
+const QuickSale = React.lazy(() => import('./pages/quick/QuickSale'));
 
 const AppContent = () => {
   const { license, loading, hasModuleAccess } = useLicense();
@@ -109,6 +110,9 @@ const AppContent = () => {
           <Route path="sales/new" element={<ProtectedRoute moduleName="sales" element={<SaleForm />} />} />
           <Route path="sales/edit/:id" element={<ProtectedRoute moduleName="sales" element={<SaleForm />} />} />
           <Route path="sales/:id" element={<ProtectedRoute moduleName="sales" element={<SaleDetails />} />} />
+          
+          {/* Quick Sale Module */}
+          <Route path="quick" element={<ProtectedRoute moduleName="quick" element={<QuickSale />} />} />
           
           {/* Stock */}
           <Route path="stock" element={<ProtectedRoute moduleName="stock" element={<StockDashboard />} />} />
