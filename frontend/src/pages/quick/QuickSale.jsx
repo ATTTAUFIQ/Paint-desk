@@ -20,6 +20,13 @@ const QuickSale = () => {
 
   const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
 
+  const formatCurrency = (amount) => {
+    return Number(amount || 0).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
 
   useEffect(() => {
     fetchDraft();
@@ -366,12 +373,12 @@ const QuickSale = () => {
                             </button>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right font-medium">₹{parseFloat(item.unitPrice).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right font-medium">₹{formatCurrency(item.unitPrice)}</td>
                         <td className="px-4 py-3 text-right">
-                          <div className="font-medium text-slate-700">₹{parseFloat(item.gstAmount).toLocaleString()}</div>
+                          <div className="font-medium text-slate-700">₹{formatCurrency(item.gstAmount)}</div>
                           <div className="text-[10px] text-slate-400 bg-slate-100 inline-block px-1.5 py-0.5 rounded mt-0.5">{item.gstPercentage}%</div>
                         </td>
-                        <td className="px-4 py-3 text-right font-bold text-slate-800">₹{parseFloat(item.totalPrice).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right font-bold text-slate-800">₹{formatCurrency(item.totalPrice)}</td>
                         <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => removeItem(item._id)}
@@ -397,15 +404,15 @@ const QuickSale = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Subtotal</p>
-                    <p className="text-xl font-black text-slate-800">₹{(draft.subTotal || 0).toLocaleString()}</p>
+                    <p className="text-xl font-black text-slate-800">₹{formatCurrency(draft.subTotal)}</p>
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tax (GST)</p>
-                    <p className="text-xl font-black text-slate-800">₹{(draft.totalGst || 0).toLocaleString()}</p>
+                    <p className="text-xl font-black text-slate-800">₹{formatCurrency(draft.totalGst)}</p>
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Grand Total</p>
-                    <p className="text-2xl font-black text-blue-600">₹{(draft.totalAmount || 0).toLocaleString()}</p>
+                    <p className="text-2xl font-black text-blue-600">₹{formatCurrency(draft.totalAmount)}</p>
                   </div>
                 </div>
 
@@ -449,7 +456,7 @@ const QuickSale = () => {
                 </div>
                 <div className="mt-4 flex justify-between items-center px-4 py-2 bg-white rounded-lg border border-slate-200">
                   <span className="text-sm text-slate-500 font-medium">Price</span>
-                  <span className="font-bold text-blue-600">₹{parseFloat(pendingProduct.sellingPrice || 0).toLocaleString()}</span>
+                  <span className="font-bold text-blue-600">₹{formatCurrency(pendingProduct.sellingPrice)}</span>
                 </div>
               </div>
 
