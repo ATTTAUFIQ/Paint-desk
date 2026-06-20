@@ -16,14 +16,51 @@ const QuickSale = () => {
   const [scanError, setScanError] = useState(null);
   const [pendingProduct, setPendingProduct] = useState(null);
   const scannerRef = useRef(null);
+  const handleScanRef = useRef(null);
 
   const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
 
   useEffect(() => {
+    handleScanRef.current = handleScan;
+  }, [handleScan]);
+
+  useEffect(() => {
     fetchDraft();
     return () => {
-      stopScanner();
+      // stopScanner here just updates state on unmount which is unnecessary
     };
+  }, []);
+
+  // Global Physical Barcode Scanner Listener
+  useEffect(() => {
+    let barcode = '';
+    let lastKeyTime = Date.now();
+
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input field
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      const currentTime = Date.now();
+      // Most physical scanners type extremely fast (less than 30ms between keystrokes)
+      if (currentTime - lastKeyTime > 50) {
+        barcode = ''; 
+      }
+      lastKeyTime = currentTime;
+
+      if (e.key === 'Enter') {
+        if (barcode.length > 2) {
+          handleScanRef.current(barcode);
+        }
+        barcode = '';
+      } else if (e.key.length === 1) {
+        barcode += e.key;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const fetchDraft = async () => {
@@ -114,6 +151,7 @@ const QuickSale = () => {
 
   useEffect(() => {
     let html5QrCode;
+    let isMounted = true;
 
     if (scanning) {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -122,25 +160,60 @@ const QuickSale = () => {
         return;
       }
 
-      html5QrCode = new Html5Qrcode("reader");
-      scannerRef.current = html5QrCode;
+      const initScanner = async () => {
+        try {
+          await window.scannerCleanupPromise; // Wait for previous instance to fully stop
+          if (!isMounted) return;
 
-      html5QrCode.start(
-        { facingMode: "environment" }, 
-        { fps: 30, qrbox: { width: 250, height: 250 } },
-        handleScan,
-        undefined
-      ).catch(err => {
-        setScanError("Camera Error: " + (err?.message || err));
-        setScanning(false);
-      });
+          html5QrCode = new Html5Qrcode("reader");
+          scannerRef.current = html5QrCode;
+
+          await html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 30, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+              if (isMounted && handleScanRef.current) {
+                handleScanRef.current(decodedText);
+              }
+            },
+            undefined
+          );
+        } catch (err) {
+          if (isMounted) {
+            setScanError("Camera Error: " + (err?.message || err));
+            setScanning(false);
+          }
+        }
+      };
+      
+      initScanner();
     }
 
     return () => {
+      isMounted = false;
       if (html5QrCode) {
-        html5QrCode.stop().then(() => {
-          html5QrCode.clear();
-        }).catch(err => console.error("Scanner cleanup error:", err));
+        window.scannerCleanupPromise = new Promise((resolve) => {
+          try {
+            const state = html5QrCode.getState();
+            // 2 = SCANNING, 3 = PAUSED
+            if (state === 2 || state === 3) {
+              html5QrCode.stop().then(() => {
+                try { html5QrCode.clear(); } catch(e){}
+                resolve();
+              }).catch(err => {
+                console.error("Scanner cleanup error:", err);
+                try { html5QrCode.clear(); } catch(e){}
+                resolve();
+              });
+            } else {
+              try { html5QrCode.clear(); } catch(e){}
+              resolve();
+            }
+          } catch (err) {
+            console.error("Scanner state error:", err);
+            resolve();
+          }
+        });
       }
     };
   }, [scanning]);
