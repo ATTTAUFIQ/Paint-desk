@@ -20,9 +20,6 @@ const QuickSale = () => {
 
   const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
 
-  useEffect(() => {
-    handleScanRef.current = handleScan;
-  }, [handleScan]);
 
   useEffect(() => {
     fetchDraft();
@@ -116,6 +113,10 @@ const QuickSale = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    handleScanRef.current = handleScan;
+  }, [handleScan]);
 
   const confirmAddProduct = async () => {
     if (!pendingProduct) return;
