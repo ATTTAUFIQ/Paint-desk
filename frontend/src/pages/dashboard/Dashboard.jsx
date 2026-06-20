@@ -4,7 +4,7 @@ import {
   LineChart, Line, BarChart, Bar, Legend
 } from 'recharts';
 import { 
-  TrendingUp, TrendingDown, DollarSign, ShoppingBag, 
+  TrendingUp, TrendingDown, IndianRupee, ShoppingBag, 
   Users, Package, AlertTriangle, PackageX 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -94,7 +94,7 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stats?.profitToday >= 0 ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
-              <DollarSign size={24} />
+              <IndianRupee size={24} />
             </div>
           </div>
         </div>

@@ -17,6 +17,7 @@ const getDashboardStats = async () => {
 
   const [
     salesTodayAgg,
+    cogsTodayAgg,
     purchasesTodayAgg,
     expensesTodayAgg,
     totalCustomers,
@@ -27,6 +28,17 @@ const getDashboardStats = async () => {
     Sale.aggregate([
       { $match: { saleDate: todayMatch } },
       { $group: { _id: null, total: { $sum: '$subTotal' } } }
+    ]),
+    Sale.aggregate([
+      { $match: { saleDate: todayMatch } },
+      { $lookup: { from: 'saleitems', localField: '_id', foreignField: 'saleId', as: 'items' } },
+      { $unwind: '$items' },
+      { $lookup: { from: 'products', localField: 'items.productId', foreignField: '_id', as: 'product' } },
+      { $unwind: '$product' },
+      { $group: { 
+          _id: null, 
+          totalCogs: { $sum: { $multiply: ['$items.quantity', '$product.purchasePrice'] } } 
+      } }
     ]),
     Purchase.aggregate([
       { $match: { purchaseDate: todayMatch } },
@@ -46,9 +58,10 @@ const getDashboardStats = async () => {
   ]);
 
   const salesToday = salesTodayAgg[0] ? parseFloat(salesTodayAgg[0].total.toString()) : 0;
+  const cogsToday = cogsTodayAgg[0] ? parseFloat(cogsTodayAgg[0].totalCogs.toString()) : 0;
   const purchasesToday = purchasesTodayAgg[0] ? parseFloat(purchasesTodayAgg[0].total.toString()) : 0;
   const expensesToday = expensesTodayAgg[0] ? parseFloat(expensesTodayAgg[0].total.toString()) : 0;
-  const profitToday = salesToday - purchasesToday - expensesToday;
+  const profitToday = salesToday - cogsToday - expensesToday;
 
   return {
     salesToday,

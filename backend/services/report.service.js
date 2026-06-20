@@ -64,17 +64,23 @@ const getExpenseReport = async (startDate, endDate) => {
 
 const getProfitReport = async (startDate, endDate) => {
   const saleMatch = getDateFilter(startDate, endDate, 'saleDate');
-  const purchaseMatch = getDateFilter(startDate, endDate, 'purchaseDate');
   const expenseMatch = getDateFilter(startDate, endDate, 'expenseDate');
 
-  const [salesAgg, purchasesAgg, expensesAgg] = await Promise.all([
+  const [salesAgg, cogsAgg, expensesAgg] = await Promise.all([
     Sale.aggregate([
       { $match: saleMatch },
-      { $group: { _id: null, totalSales: { $sum: '$subTotal' } } } // Profit usually calculated on subtotal (pre-tax) or we can use totalAmount. Let's use subTotal to be accurate.
+      { $group: { _id: null, totalSales: { $sum: '$subTotal' } } }
     ]),
-    Purchase.aggregate([
-      { $match: purchaseMatch },
-      { $group: { _id: null, totalPurchases: { $sum: '$subTotal' } } }
+    Sale.aggregate([
+      { $match: saleMatch },
+      { $lookup: { from: 'saleitems', localField: '_id', foreignField: 'saleId', as: 'items' } },
+      { $unwind: '$items' },
+      { $lookup: { from: 'products', localField: 'items.productId', foreignField: '_id', as: 'product' } },
+      { $unwind: '$product' },
+      { $group: { 
+          _id: null, 
+          totalCogs: { $sum: { $multiply: ['$items.quantity', '$product.purchasePrice'] } } 
+      } }
     ]),
     Expense.aggregate([
       { $match: expenseMatch },
@@ -83,20 +89,19 @@ const getProfitReport = async (startDate, endDate) => {
   ]);
 
   const totalSales = salesAgg[0] ? parseFloat(salesAgg[0].totalSales.toString()) : 0;
-  const totalPurchases = purchasesAgg[0] ? parseFloat(purchasesAgg[0].totalPurchases.toString()) : 0;
+  const totalCogs = cogsAgg[0] ? parseFloat(cogsAgg[0].totalCogs.toString()) : 0;
   const totalExpenses = expensesAgg[0] ? parseFloat(expensesAgg[0].totalExpenses.toString()) : 0;
 
-  const netProfit = totalSales - totalPurchases - totalExpenses;
+  const netProfit = totalSales - totalCogs - totalExpenses;
 
-  // We'll return a data array so the frontend table can render a simple P&L
   const data = [
     { category: 'Revenue (Sales Subtotal)', amount: totalSales },
-    { category: 'Cost of Goods (Purchases Subtotal)', amount: -totalPurchases },
+    { category: 'Cost of Goods Sold (COGS)', amount: -totalCogs },
     { category: 'Operating Expenses', amount: -totalExpenses },
     { category: 'Net Profit', amount: netProfit }
   ];
 
-  return { data, summary: { netProfit, totalSales, totalPurchases, totalExpenses } };
+  return { data, summary: { netProfit, totalSales, totalCogs, totalExpenses } };
 };
 
 const getCustomerOutstanding = async () => {
