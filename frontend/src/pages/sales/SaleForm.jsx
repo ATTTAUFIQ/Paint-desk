@@ -7,8 +7,10 @@ import customerService from '../../services/customerService';
 import productService from '../../services/productService';
 import PageHeader from '../../components/common/PageHeader';
 import Select from 'react-select';
+import axios from 'axios';
 
 const SaleForm = () => {
+  const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
   const navigate = useNavigate();
   const location = useLocation();
   const [customers, setCustomers] = useState([]);
@@ -215,6 +217,14 @@ const SaleForm = () => {
         await saleService.updateSale(id, payload);
       } else {
         await saleService.createSale(payload);
+        // Clear draft if sale originated from one
+        if (location.state && location.state.draft) {
+          try {
+            await axios.delete(`${baseUrl}/drafts/clear`, { withCredentials: true });
+          } catch (err) {
+            console.error("Failed to clear draft after sale", err);
+          }
+        }
       }
       navigate('/sales');
     } catch (error) {
