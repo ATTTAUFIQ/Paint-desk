@@ -7,11 +7,15 @@ const createProduct = async (req, res) => {
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }
+    if (value.barcode === '') delete value.barcode;
+    if (value.qrCode === '') delete value.qrCode;
+
     const product = await productService.createProduct(value);
     res.status(201).json({ success: true, data: product, message: 'Product created successfully' });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: 'Product Code already exists' });
+      const field = Object.keys(error.keyPattern || {})[0] || 'Product Code';
+      return res.status(400).json({ success: false, message: `${field} already exists` });
     }
     res.status(500).json({ success: false, message: error.message });
   }
@@ -41,11 +45,15 @@ const updateProduct = async (req, res) => {
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }
+    if (value.barcode === '') delete value.barcode;
+    if (value.qrCode === '') delete value.qrCode;
+
     const product = await productService.updateProduct(req.params.id, value);
     res.status(200).json({ success: true, data: product, message: 'Product updated successfully' });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: 'Product Code already exists' });
+      const field = Object.keys(error.keyPattern || {})[0] || 'Product Code';
+      return res.status(400).json({ success: false, message: `${field} already exists` });
     }
     res.status(400).json({ success: false, message: error.message });
   }
