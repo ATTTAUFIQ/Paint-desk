@@ -16,9 +16,10 @@ import {
 } from 'lucide-react';
 import PageHeader from '../../components/common/PageHeader';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import UniversalInstallModal from '../../components/pwa/UniversalInstallModal';
 
 const InstallAppPage = () => {
-  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
+  const { isStandalone, isIOS, showGuideModal, setShowGuideModal, promptInstall } = usePWAInstall();
   const [appUrl] = useState(() => (typeof window !== 'undefined' ? window.location.origin : ''));
   const [copied, setCopied] = useState(false);
 
@@ -109,21 +110,19 @@ const InstallAppPage = () => {
             </button>
           </div>
 
-          {/* Desktop Install Trigger */}
-          {canInstall && (
+          {/* Persistent Desktop / Device Install Trigger */}
+          {!isStandalone ? (
             <button
               onClick={promptInstall}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-2xl transition-all shadow-md shadow-blue-500/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3.5 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm rounded-2xl transition-all shadow-md shadow-blue-500/25 active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer"
             >
               <Download size={18} />
               <span>Install Directly on this Device</span>
             </button>
-          )}
-
-          {isInstalled && (
-            <div className="w-full py-2.5 px-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2">
+          ) : (
+            <div className="w-full py-3 px-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2">
               <ShieldCheck size={16} />
-              <span>PaintDesk is already installed on this device!</span>
+              <span>PaintDesk is currently running as an installed PWA</span>
             </div>
           )}
 
@@ -232,6 +231,13 @@ const InstallAppPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Universal Guide Modal for Desktop, Android, and iOS */}
+      <UniversalInstallModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+        isIOS={isIOS}
+      />
     </div>
   );
 };

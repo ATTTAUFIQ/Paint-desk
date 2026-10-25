@@ -29,7 +29,7 @@ export const usePWAInstall = () => {
   const [isInstalled, setIsInstalled] = useState(checkIsStandalone);
   const [isIOS] = useState(checkIsIOS);
   const [isDismissed, setIsDismissed] = useState(checkIsDismissed);
-  const [showIOSModal, setShowIOSModal] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
 
   useEffect(() => {
     // 1. Listen for native beforeinstallprompt (Chromium / Edge / Android)
@@ -56,12 +56,14 @@ export const usePWAInstall = () => {
 
   const promptInstall = useCallback(async () => {
     if (isIOS) {
-      setShowIOSModal(true);
-      return { outcome: 'ios_guide' };
+      setShowGuideModal(true);
+      return { outcome: 'guide' };
     }
 
     if (!deferredPrompt) {
-      return { outcome: 'unavailable' };
+      // If native deferredPrompt was already consumed or unavailable, show the guided modal
+      setShowGuideModal(true);
+      return { outcome: 'guide' };
     }
 
     try {
@@ -74,6 +76,7 @@ export const usePWAInstall = () => {
       return choiceResult;
     } catch (err) {
       console.error('Error triggering PWA install prompt:', err);
+      setShowGuideModal(true);
       return { outcome: 'error', error: err };
     }
   }, [deferredPrompt, isIOS]);
@@ -84,17 +87,23 @@ export const usePWAInstall = () => {
     setIsDismissed(true);
   }, []);
 
-  const canInstall = !isInstalled && !isStandalone && (!!deferredPrompt || (isIOS && !isDismissed));
-  const showBanner = canInstall && !isDismissed;
+  // For persistent UI elements (Install Page, Sidebar):
+  // Show unless running in standalone window mode
+  const isInstallAvailable = !isStandalone;
+
+  // For passive bottom floating banner:
+  // Show when prompt is ready or iOS, and not dismissed
+  const showBanner = !isStandalone && !isDismissed && (!!deferredPrompt || isIOS);
 
   return {
-    canInstall,
+    canInstall: isInstallAvailable,
     showBanner,
+    hasNativePrompt: !!deferredPrompt,
     isInstalled,
     isStandalone,
     isIOS,
-    showIOSModal,
-    setShowIOSModal,
+    showGuideModal,
+    setShowGuideModal,
     promptInstall,
     dismissInstall,
   };
