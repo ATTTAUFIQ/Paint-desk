@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import OfflineBanner from './pwa/OfflineBanner';
 
 const Layout = () => {
   const location = useLocation();
@@ -13,7 +14,7 @@ const Layout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans relative overflow-hidden">
+    <div className="flex h-screen h-[100dvh] bg-slate-50 font-sans relative overflow-hidden">
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
@@ -25,20 +26,24 @@ const Layout = () => {
 
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
 
-      <main className="flex-1 flex flex-col relative w-full h-full overflow-y-auto overflow-x-hidden">
+      <main className="flex-1 flex flex-col relative w-full h-full overflow-y-auto overflow-x-hidden safe-bottom">
         {/* Absolute subtle background decoration */}
         <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-blue-50/50 via-transparent to-transparent -z-10" />
+
+        {/* Global Offline Banner for real-time connectivity status */}
+        <OfflineBanner />
 
         {/* Desktop Header */}
         <header className="hidden md:flex h-[72px] bg-white/90 backdrop-blur-md border-b border-slate-200/60 items-center px-8 sticky top-0 z-30 shrink-0 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-700 tracking-tight">{getHeaderTitle()}</h2>
         </header>
 
-        {/* Mobile-only App Bar */}
-        <header className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-4 h-16 flex items-center shadow-sm shrink-0 gap-2">
+        {/* Mobile-only App Bar with safe area padding */}
+        <header className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-4 h-16 safe-top flex items-center shadow-sm shrink-0 gap-2">
           <button
-            className="p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors active:scale-95"
+            className="p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors active:scale-95 cursor-pointer"
             onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Open navigation menu"
           >
             <Menu size={24} />
           </button>

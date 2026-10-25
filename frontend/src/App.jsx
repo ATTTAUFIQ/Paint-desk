@@ -4,6 +4,8 @@ import { LicenseProvider, useLicense } from './context/LicenseContext';
 import LicenseError from './components/common/LicenseError';
 import LicenseConfigPage from './pages/settings/LicenseConfigPage';
 import Layout from './components/Layout';
+import InstallBanner from './components/pwa/InstallBanner';
+import UpdatePrompt from './components/pwa/UpdatePrompt';
 const Dashboard = React.lazy(() => import('./pages/dashboard/Dashboard'));
 const ProductList = React.lazy(() => import('./pages/products/ProductList'));
 const ProductForm = React.lazy(() => import('./pages/products/ProductForm'));
@@ -26,12 +28,17 @@ const ReportDashboard = React.lazy(() => import('./pages/reports/ReportDashboard
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'));
 const QuickSale = React.lazy(() => import('./pages/quick/QuickSale'));
 const PublicInvoice = React.lazy(() => import('./pages/sales/PublicInvoice'));
+const InstallAppPage = React.lazy(() => import('./pages/pwa/InstallAppPage'));
+const ProtectedRoute = ({ moduleName, element }) => {
+  const { hasModuleAccess } = useLicense();
+  return hasModuleAccess(moduleName) ? element : <Navigate to="/" replace />;
+};
 
 const AppContent = () => {
-  const { license, loading, hasModuleAccess, error } = useLicense();
+  const { license, loading, error, refreshLicense } = useLicense();
 
   useEffect(() => {
-    const handleWheel = (e) => {
+    const handleWheel = () => {
       if (document.activeElement && document.activeElement.type === 'number') {
         document.activeElement.blur();
       }
@@ -79,8 +86,20 @@ const AppContent = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Connection Error</h2>
-          <p className="text-slate-600 mb-2">Could not connect to the server to verify your license. Please ensure you are connected to the internet and the server is currently online.</p>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">
+            {error?.isOffline ? 'Offline - Server Unreachable' : 'Connection Error'}
+          </h2>
+          <p className="text-slate-600 mb-4 text-sm">
+            {error?.isOffline
+              ? 'You are currently disconnected. PaintDesk requires an initial connection to verify your system license. Please reconnect and retry.'
+              : 'Could not connect to the server to verify your license. Please ensure you are connected to the internet and the server is currently online.'}
+          </p>
+          <button
+            onClick={refreshLicense}
+            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-sm shadow-blue-500/20 active:scale-95 cursor-pointer"
+          >
+            Retry Connection
+          </button>
         </div>
       </div>
     );
@@ -88,10 +107,6 @@ const AppContent = () => {
 
   const isInactive = license && !license.active;
   const isExpired = license && license.expiryDate && new Date() > new Date(license.expiryDate);
-
-  const ProtectedRoute = ({ moduleName, element }) => {
-    return hasModuleAccess(moduleName) ? element : <Navigate to="/" replace />;
-  };
 
   return (
     <React.Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>}>
@@ -140,6 +155,7 @@ const AppContent = () => {
           <Route path="reports" element={<ProtectedRoute moduleName="reports" element={<ReportDashboard />} />} />
           
           <Route path="settings" element={<ProtectedRoute moduleName="settings" element={<SettingsPage />} />} />
+          <Route path="install-app" element={<InstallAppPage />} />
         </Route>
       </Routes>
     </React.Suspense>
@@ -167,6 +183,8 @@ function App() {
           } 
         />
       </Routes>
+      <InstallBanner />
+      <UpdatePrompt />
     </Router>
   );
 }
